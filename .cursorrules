@@ -40,5 +40,9 @@
     - Use only for Web API access in small components.
     - Avoid for data fetching or state management.
   
+  Source Control
+  - Stage and commit all changes.
+  - Write clear commit messages.
+  
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
   
