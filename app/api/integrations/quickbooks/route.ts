@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { QuickBooksClient, Transaction } from '@/lib/clients/quickbooks';
+import { analyzeTransactions, PaymentFrequency } from '@/lib/utils/transaction-analysis';
 
 const QUICKBOOKS_CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID!;
 const QUICKBOOKS_CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET!;
 const QUICKBOOKS_REDIRECT_URI = `${process.env.AUTH0_BASE_URL}/api/integrations/quickbooks/callback`;
 const QUICKBOOKS_ENVIRONMENT = process.env.NODE_ENV === 'production' ? 'production' : 'sandbox';
+
+// Minimum confidence score to consider a vendor as a SaaS provider
+const MIN_CONFIDENCE_SCORE = 0.5;
 
 // Initialize QuickBooks client
 const quickbooksClient = new QuickBooksClient({
@@ -16,24 +20,27 @@ const quickbooksClient = new QuickBooksClient({
   redirectUri: QUICKBOOKS_REDIRECT_URI,
 });
 
-// POST /api/integrations/quickbooks - Start OAuth flow
-export const POST = withApiAuthRequired(async (request: Request) => {
-  try {
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const authUri = quickbooksClient.getAuthorizationUrl(session.user.email);
-    return NextResponse.json({ authUri });
-  } catch (error) {
-    console.error('Error initiating QuickBooks OAuth:', error);
-    return NextResponse.json(
-      { error: 'Failed to initiate QuickBooks integration' },
-      { status: 500 }
-    );
+// Helper function to calculate next charge date
+function calculateNextChargeDate(
+  lastTransactionDate: Date,
+  frequency: PaymentFrequency
+): Date {
+  const nextDate = new Date(lastTransactionDate);
+  switch (frequency) {
+    case PaymentFrequency.MONTHLY:
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case PaymentFrequency.QUARTERLY:
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case PaymentFrequency.ANNUAL:
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default:
+      nextDate.setMonth(nextDate.getMonth() + 1); // Default to monthly
   }
-});
+  return nextDate;
+}
 
 // Helper function to get user's company
 async function getUserCompany(userEmail: string) {
@@ -53,47 +60,112 @@ async function getUserCompany(userEmail: string) {
 
 // Helper function to process transactions
 async function processTransactions(transactions: Transaction[], companyId: string) {
-  for (const transaction of transactions) {
-    const vendor = transaction.AccountRef;
-    if (!vendor) continue;
+  // Analyze transactions to identify recurring vendors
+  const vendorAnalyses = analyzeTransactions(transactions);
+  let processedCount = 0;
 
-    // Check if this is a recurring payment
+  for (const analysis of vendorAnalyses) {
+    // Skip vendors with low confidence scores
+    if (analysis.confidence < MIN_CONFIDENCE_SCORE) continue;
+
+    // Calculate monthly and annual amounts
+    const monthlyAmount = analysis.paymentFrequency === PaymentFrequency.MONTHLY 
+      ? analysis.averageAmount
+      : analysis.paymentFrequency === PaymentFrequency.QUARTERLY
+      ? analysis.averageAmount / 3
+      : analysis.paymentFrequency === PaymentFrequency.ANNUAL
+      ? analysis.averageAmount / 12
+      : analysis.averageAmount;
+
+    const annualAmount = monthlyAmount * 12;
+
+    // Check if this vendor is already tracked
     const existingSubscription = await prisma.subscription.findFirst({
       where: {
         companyId,
-        quickbooksVendorId: vendor.value.toString(),
+        quickbooksVendorId: analysis.vendorId,
       },
     });
+
+    const lastTransaction = analysis.transactions[analysis.transactions.length - 1];
+    const nextChargeDate = calculateNextChargeDate(
+      analysis.lastTransactionDate,
+      analysis.paymentFrequency
+    );
+
+    const subscriptionData = {
+      vendorName: analysis.vendorName,
+      monthlyAmount,
+      annualAmount,
+      lastChargeAmount: lastTransaction.TotalAmt,
+      paymentFrequency: analysis.paymentFrequency,
+      lastTransactionDate: analysis.lastTransactionDate,
+      quickbooksLastSync: new Date(),
+      confidenceScore: analysis.confidence,
+      nextChargeDate,
+      // Default to notifying 14 days before next charge
+      notifyBefore: 14,
+      // Try to detect payment method from transaction data
+      billingType: lastTransaction.PaymentType === 'CreditCard' 
+        ? 'CREDIT_CARD' 
+        : lastTransaction.PaymentType === 'Check'
+        ? 'CHECK'
+        : 'OTHER',
+    };
 
     if (existingSubscription) {
       // Update existing subscription
       await prisma.subscription.update({
         where: { id: existingSubscription.id },
         data: {
-          lastTransactionDate: new Date(transaction.TxnDate),
-          lastChargeAmount: transaction.TotalAmt,
-          quickbooksLastSync: new Date(),
+          ...subscriptionData,
+          // Don't override these fields if they were manually set
+          description: undefined,
+          website: undefined,
+          category: undefined,
+          tags: undefined,
+          notes: undefined,
         },
       });
     } else {
-      // Create new subscription if it seems recurring
+      // Create new subscription
       await prisma.subscription.create({
         data: {
           companyId,
-          planId: vendor.name,
+          planId: analysis.vendorName,
           status: 'ACTIVE',
-          quickbooksVendorId: vendor.value.toString(),
-          lastTransactionDate: new Date(transaction.TxnDate),
-          lastChargeAmount: transaction.TotalAmt,
-          quickbooksLastSync: new Date(),
-          paymentFrequency: 'UNKNOWN',
+          quickbooksVendorId: analysis.vendorId,
+          ...subscriptionData,
+          // Initialize empty arrays/optional fields
+          tags: [],
         },
       });
     }
+
+    processedCount++;
   }
 
-  return transactions.length;
+  return processedCount;
 }
+
+// POST /api/integrations/quickbooks - Start OAuth flow
+export const POST = withApiAuthRequired(async (request: Request) => {
+  try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const authUri = quickbooksClient.getAuthorizationUrl(session.user.email);
+    return NextResponse.json({ authUri });
+  } catch (error) {
+    console.error('Error initiating QuickBooks OAuth:', error);
+    return NextResponse.json(
+      { error: 'Failed to initiate QuickBooks integration' },
+      { status: 500 }
+    );
+  }
+});
 
 // GET /api/integrations/quickbooks/sync - Manual sync
 export const GET = withApiAuthRequired(async (request: Request) => {
@@ -149,7 +221,7 @@ export const GET = withApiAuthRequired(async (request: Request) => {
     const transactions = await quickbooksClient.queryTransactions(startDate);
 
     // Process transactions
-    const transactionCount = await processTransactions(transactions, company.id);
+    const processedCount = await processTransactions(transactions, company.id);
 
     // Update last sync time
     await prisma.quickBooksIntegration.update({
@@ -158,7 +230,8 @@ export const GET = withApiAuthRequired(async (request: Request) => {
     });
 
     return NextResponse.json({
-      message: `Successfully synced ${transactionCount} transactions`,
+      message: `Successfully processed ${processedCount} recurring vendors`,
+      totalTransactions: transactions.length,
     });
   } catch (error) {
     console.error('Error syncing with QuickBooks:', error);
