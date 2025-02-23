@@ -26,6 +26,8 @@ model Company {
   users         CompanyUser[]
   subscriptions Subscription[]
   quickbooks    QuickBooksIntegration?
+  google        GoogleWorkspaceIntegration?
+  discoveredApps DiscoveredApp[]
 }
 
 model CompanyUser {
@@ -81,6 +83,9 @@ model Subscription {
   notifyBefore      Int?      // Days before to notify
   notes             String?
   
+  // Google Workspace Integration
+  discoveredApps DiscoveredApp[]
+  
   @@index([companyId])
   @@index([quickbooksVendorId])
   @@index([vendorName])
@@ -97,6 +102,50 @@ model QuickBooksIntegration {
   lastSyncAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model GoogleWorkspaceIntegration {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  domain          String   // Google Workspace domain
+  accessToken     String
+  refreshToken    String
+  tokenExpiresAt  DateTime
+  isAdmin         Boolean  @default(false)
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model DiscoveredApp {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String
+  appId           String?  // App ID from marketplace or OAuth client ID
+  website         String?
+  description     String?
+  logoUrl         String?
+  installCount    Int      @default(1)
+  firstSeen       DateTime @default(now())
+  lastSeen        DateTime @default(now())
+  source          AppSource
+  status          AppStatus @default(ACTIVE)
+  riskLevel       RiskLevel @default(UNKNOWN)
+  // For matching with subscriptions
+  matchedSubscriptionId String?
+  subscription   Subscription? @relation(fields: [matchedSubscriptionId], references: [id])
+  // Discovery metadata
+  discoveredBy   String?  // User email who had the app installed
+  discoveryMethod String? // How the app was discovered (OAuth, marketplace, etc.)
+  scopes         String[] // OAuth scopes or permissions
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([appId])
+  @@index([name])
 }
 
 enum Role {
@@ -126,4 +175,25 @@ enum BillingType {
   WIRE
   CHECK
   OTHER
+}
+
+enum AppSource {
+  GOOGLE_WORKSPACE
+  QUICKBOOKS
+  MANUAL
+}
+
+enum AppStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+  PENDING_REVIEW
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  UNKNOWN
 } 

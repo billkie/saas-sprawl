@@ -26,6 +26,8 @@
     "bullmq": "^5.41.5",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "google-auth-library": "^9.15.1",
+    "googleapis": "^144.0.0",
     "intuit-oauth": "^4.2.0",
     "ioredis": "^5.5.0",
     "next": "latest",
