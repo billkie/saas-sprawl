@@ -14,6 +14,8 @@ export const TEMPLATE_IDS = {
   RENEWAL_REMINDER: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   RENEWAL_DUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   RENEWAL_OVERDUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  SYNC_SUCCESS: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  SYNC_FAILURE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 };
 
 export interface EmailData {
@@ -53,6 +55,68 @@ export async function sendEmail({
     console.error('Error sending email:', error);
     throw error;
   }
+}
+
+/**
+ * Send sync success notification
+ */
+export async function sendSyncSuccessEmail(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    integrationType: 'QuickBooks' | 'Google Workspace';
+    syncResults: {
+      newItems: number;
+      updatedItems: number;
+      totalProcessed: number;
+    };
+    syncDate: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.SYNC_SUCCESS,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      integrationType: data.integrationType,
+      newItems: data.syncResults.newItems,
+      updatedItems: data.syncResults.updatedItems,
+      totalProcessed: data.syncResults.totalProcessed,
+      syncDate: formatDate(data.syncDate),
+    },
+  });
+}
+
+/**
+ * Send sync failure notification
+ */
+export async function sendSyncFailureEmail(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    integrationType: 'QuickBooks' | 'Google Workspace';
+    error: string;
+    errorDetails?: string;
+    syncDate: string;
+    nextRetry?: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.SYNC_FAILURE,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      integrationType: data.integrationType,
+      error: data.error,
+      errorDetails: data.errorDetails,
+      syncDate: formatDate(data.syncDate),
+      nextRetry: data.nextRetry ? formatDate(data.nextRetry) : undefined,
+    },
+  });
 }
 
 /**

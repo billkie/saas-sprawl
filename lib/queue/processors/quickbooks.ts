@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { QuickBooksClient } from '@/lib/clients/quickbooks';
-import { processTransactions } from '@/lib/utils/transaction-analysis';
+import { analyzeTransactions } from '@/lib/utils/transaction-analysis';
+import { sendSyncSuccessEmail, sendSyncFailureEmail } from '@/lib/email';
 
 const QUICKBOOKS_CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID!;
 const QUICKBOOKS_CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET!;
@@ -10,7 +11,20 @@ const QUICKBOOKS_ENVIRONMENT = process.env.NODE_ENV === 'production' ? 'producti
 export async function syncQuickBooks() {
   const integrations = await prisma.quickBooksIntegration.findMany({
     include: {
-      company: true,
+      company: {
+        include: {
+          users: {
+            where: {
+              role: {
+                in: ['OWNER', 'ADMIN'],
+              },
+            },
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -22,6 +36,12 @@ export async function syncQuickBooks() {
   };
 
   for (const integration of integrations) {
+    const syncResults = {
+      newItems: 0,
+      updatedItems: 0,
+      totalProcessed: 0,
+    };
+
     try {
       const quickbooksClient = new QuickBooksClient({
         clientId: QUICKBOOKS_CLIENT_ID,
@@ -57,8 +77,29 @@ export async function syncQuickBooks() {
       const startDate = integration.lastSyncAt || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const transactions = await quickbooksClient.queryTransactions(startDate);
 
-      // Process transactions
-      const processedCount = await processTransactions(transactions, integration.companyId);
+      // Get existing subscriptions for comparison
+      const existingSubscriptions = await prisma.subscription.findMany({
+        where: {
+          companyId: integration.companyId,
+          quickbooksVendorId: { not: null },
+        },
+      });
+
+      // Process transactions using analyzeTransactions
+      const analyses = analyzeTransactions(transactions);
+      const processedCount = analyses.length;
+      
+      // Get updated subscriptions to calculate changes
+      const updatedSubscriptions = await prisma.subscription.findMany({
+        where: {
+          companyId: integration.companyId,
+          quickbooksVendorId: { not: null },
+        },
+      });
+
+      syncResults.newItems = updatedSubscriptions.length - existingSubscriptions.length;
+      syncResults.updatedItems = processedCount - syncResults.newItems;
+      syncResults.totalProcessed = processedCount;
 
       // Update last sync time
       await prisma.quickBooksIntegration.update({
@@ -68,10 +109,41 @@ export async function syncQuickBooks() {
 
       console.log(`Successfully synced ${processedCount} transactions for company ${integration.company.name}`);
       results.success++;
+
+      // Send success notification to company owners and admins
+      for (const companyUser of integration.company.users) {
+        await sendSyncSuccessEmail(
+          companyUser.user.email,
+          {
+            userName: companyUser.user.name || 'there',
+            companyName: integration.company.name,
+            integrationType: 'QuickBooks',
+            syncResults,
+            syncDate: new Date().toISOString(),
+          }
+        );
+      }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`Error syncing QuickBooks for company ${integration.company.name}:`, error);
       results.failed++;
-      results.errors.push(`${integration.company.name}: ${error.message}`);
+      results.errors.push(`${integration.company.name}: ${errorMessage}`);
+
+      // Send failure notification to company owners and admins
+      for (const companyUser of integration.company.users) {
+        await sendSyncFailureEmail(
+          companyUser.user.email,
+          {
+            userName: companyUser.user.name || 'there',
+            companyName: integration.company.name,
+            integrationType: 'QuickBooks',
+            error: 'Failed to sync with QuickBooks',
+            errorDetails: errorMessage,
+            syncDate: new Date().toISOString(),
+            nextRetry: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Next day
+          }
+        );
+      }
     }
   }
 
