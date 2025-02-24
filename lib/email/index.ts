@@ -9,14 +9,11 @@ const sender = {
   name: process.env.SENDGRID_FROM_NAME!,
 };
 
-// Email template IDs (you'll need to create these in SendGrid dashboard)
-export const _IDS = {
-  WELCOME: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  SUBSCRIPTION_CONFIRMATION: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  PAYMENT_SUCCESS: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  PAYMENT_FAILED: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  SUBSCRIPTION_CANCELED: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+// Email template IDs
+export const TEMPLATE_IDS = {
   RENEWAL_REMINDER: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  RENEWAL_DUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  RENEWAL_OVERDUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 };
 
 export interface EmailData {
@@ -59,139 +56,51 @@ export async function sendEmail({
 }
 
 /**
- * Send welcome email to new user
- */
-export async function sendWelcomeEmail(to: string, data: { name: string; companyName: string }) {
-  return sendEmail({
-    to,
-    templateId: TEMPLATE_IDS.WELCOME,
-    dynamicTemplateData: {
-      name: data.name,
-      companyName: data.companyName,
-    },
-  });
-}
-
-/**
- * Send subscription confirmation email
- */
-export async function sendSubscriptionConfirmation(
-  to: string,
-  data: {
-    companyName: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    nextBillingDate: string;
-  }
-) {
-  return sendEmail({
-    to,
-    templateId: TEMPLATE_IDS.SUBSCRIPTION_CONFIRMATION,
-    dynamicTemplateData: {
-      companyName: data.companyName,
-      planName: data.planName,
-      amount: formatAmount(data.amount, data.currency),
-      nextBillingDate: formatDate(data.nextBillingDate),
-    },
-  });
-}
-
-/**
- * Send payment success email
- */
-export async function sendPaymentSuccessEmail(
-  to: string,
-  data: {
-    companyName: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    nextBillingDate: string;
-  }
-) {
-  return sendEmail({
-    to,
-    templateId: TEMPLATE_IDS.PAYMENT_SUCCESS,
-    dynamicTemplateData: {
-      companyName: data.companyName,
-      planName: data.planName,
-      amount: formatAmount(data.amount, data.currency),
-      nextBillingDate: formatDate(data.nextBillingDate),
-    },
-  });
-}
-
-/**
- * Send payment failed email
- */
-export async function sendPaymentFailedEmail(
-  to: string,
-  data: {
-    companyName: string;
-    planName: string;
-    amount: number;
-    currency: string;
-    retryDate: string;
-  }
-) {
-  return sendEmail({
-    to,
-    templateId: TEMPLATE_IDS.PAYMENT_FAILED,
-    dynamicTemplateData: {
-      companyName: data.companyName,
-      planName: data.planName,
-      amount: formatAmount(data.amount, data.currency),
-      retryDate: formatDate(data.retryDate),
-    },
-  });
-}
-
-/**
- * Send subscription canceled email
- */
-export async function sendSubscriptionCanceledEmail(
-  to: string,
-  data: {
-    companyName: string;
-    planName: string;
-    endDate: string;
-  }
-) {
-  return sendEmail({
-    to,
-    templateId: TEMPLATE_IDS.SUBSCRIPTION_CANCELED,
-    dynamicTemplateData: {
-      companyName: data.companyName,
-      planName: data.planName,
-      endDate: formatDate(data.endDate),
-    },
-  });
-}
-
-/**
  * Send renewal reminder email
  */
-export async function sendRenewalReminderEmail(
+export async function sendRenewalReminder(
   to: string,
   data: {
+    userName: string;
     companyName: string;
-    planName: string;
+    vendorName: string;
+    subscriptionName: string;
     amount: number;
     currency: string;
     renewalDate: string;
     daysUntilRenewal: number;
+    managementUrl: string;
+    source: string;
+    category?: string;
+    lastChargeDate?: string;
   }
 ) {
+  let templateId = TEMPLATE_IDS.RENEWAL_REMINDER;
+  
+  // Use different templates based on urgency
+  if (data.daysUntilRenewal === 0) {
+    templateId = TEMPLATE_IDS.RENEWAL_DUE;
+  } else if (data.daysUntilRenewal < 0) {
+    templateId = TEMPLATE_IDS.RENEWAL_OVERDUE;
+  }
+
   return sendEmail({
     to,
-    templateId: TEMPLATE_IDS.RENEWAL_REMINDER,
+    templateId,
     dynamicTemplateData: {
+      userName: data.userName,
       companyName: data.companyName,
-      planName: data.planName,
+      vendorName: data.vendorName,
+      subscriptionName: data.subscriptionName,
       amount: formatAmount(data.amount, data.currency),
       renewalDate: formatDate(data.renewalDate),
-      daysUntilRenewal: data.daysUntilRenewal,
+      daysUntilRenewal: Math.abs(data.daysUntilRenewal),
+      managementUrl: data.managementUrl,
+      source: data.source,
+      category: data.category,
+      lastChargeDate: data.lastChargeDate ? formatDate(data.lastChargeDate) : undefined,
+      isOverdue: data.daysUntilRenewal < 0,
+      isDueToday: data.daysUntilRenewal === 0,
     },
   });
 }
