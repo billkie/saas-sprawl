@@ -1,6 +1,6 @@
 import { stripe } from '@/lib/stripe';
 import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
-import type { Company, Prisma } from '@prisma/client';
+import type { Company, Prisma, BillingStatus } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
 type CompanyWithStripe = Company & {
@@ -40,7 +40,7 @@ export async function createOrUpdateCustomer(companyId: string, email: string) {
       where: { id: companyId },
       data: {
         stripeCustomerId: customer.id,
-      } as Prisma.CompanyUpdateInput,
+      },
     });
   }
 
@@ -78,12 +78,12 @@ export async function createSubscription(
       subscriptionStatus: tier,
       subscriptionStartDate: new Date(subscription.current_period_start * 1000),
       subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-    } as Prisma.CompanyUpdateInput,
+    },
   });
 
   // Create billing log
   const invoice = subscription.latest_invoice as any;
-  await prisma.billing_log.create({
+  await prisma.billingLog.create({
     data: {
       companyId,
       amount: invoice.amount_due / 100, // Convert from cents
@@ -107,7 +107,7 @@ export async function cancelSubscription(subscriptionId: string) {
   const company = await prisma.company.findFirst({
     where: {
       stripeSubscriptionId: subscriptionId,
-    } as Prisma.CompanyWhereInput,
+    },
   });
 
   if (company) {
@@ -115,7 +115,7 @@ export async function cancelSubscription(subscriptionId: string) {
       where: { id: company.id },
       data: {
         subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-      } as Prisma.CompanyUpdateInput,
+      },
     });
   }
 
@@ -148,7 +148,7 @@ export async function updateSubscription(
   const company = await prisma.company.findFirst({
     where: {
       stripeSubscriptionId: subscriptionId,
-    } as Prisma.CompanyWhereInput,
+    },
   });
 
   if (company) {
@@ -157,11 +157,11 @@ export async function updateSubscription(
       data: {
         subscriptionStatus: newTier,
         stripePriceId: priceId,
-      } as Prisma.CompanyUpdateInput,
+      },
     });
 
     // Log the change
-    await prisma.billing_log.create({
+    await prisma.billingLog.create({
       data: {
         companyId: company.id,
         amount: pricingTier.price,
@@ -182,14 +182,14 @@ export async function handleSubscriptionUpdated(
   const company = await prisma.company.findFirst({
     where: {
       stripeSubscriptionId: subscriptionId,
-    } as Prisma.CompanyWhereInput,
+    },
   });
 
   if (!company) return;
 
   if (status === 'active') {
     // Update billing log status
-    await prisma.billing_log.updateMany({
+    await prisma.billingLog.updateMany({
       where: {
         companyId: company.id,
         status: 'PENDING',
@@ -204,7 +204,7 @@ export async function handleSubscriptionUpdated(
       data: {
         subscriptionStatus: null,
         subscriptionEndDate: new Date(),
-      } as Prisma.CompanyUpdateInput,
+      },
     });
   }
 } 

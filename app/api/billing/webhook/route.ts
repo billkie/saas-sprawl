@@ -13,8 +13,7 @@ export const config = {
 
 async function getStripeEvent(req: Request): Promise<Stripe.Event> {
   const body = await req.text();
-  const headersList = headers();
-  const sig = headersList.get('stripe-signature');
+  const sig = headers().get('stripe-signature');
 
   if (!sig) {
     throw new Error('No Stripe signature found');
