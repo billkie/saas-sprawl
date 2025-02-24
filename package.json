@@ -1,6 +1,7 @@
 {
-  "name": "saas-sprawl",
+  "name": "ziruna",
   "version": "0.1.0",
+  "description": "Ziruna - SaaS Spend Management and Discovery Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",
