@@ -25,6 +25,9 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.development
+.env.test
+.env.production
 
 # vercel
 .vercel
@@ -32,6 +35,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea
+.vscode
+
+# Stripe CLI config
+.stripe/config.toml
+
+# Local development files
+*.local
+*.dev
+*.development
 
 # IDE
 .idea
