@@ -28,6 +28,13 @@ model Company {
   quickbooks    QuickBooksIntegration?
   google        GoogleWorkspaceIntegration?
   discoveredApps DiscoveredApp[]
+  stripePriceId String?
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  subscriptionStatus SubscriptionTier?
+  subscriptionStartDate DateTime?
+  subscriptionEndDate DateTime?
+  billingLogs BillingLog[]
 }
 
 model CompanyUser {
@@ -196,4 +203,34 @@ enum RiskLevel {
   HIGH
   CRITICAL
   UNKNOWN
+}
+
+enum SubscriptionTier {
+  BASIC
+  GROWTH
+  ENTERPRISE
+}
+
+model BillingLog {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String   @default("USD")
+  status        BillingStatus
+  stripeInvoiceId String?
+  stripePaymentIntentId String?
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([stripeInvoiceId])
+}
+
+enum BillingStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
 } 
