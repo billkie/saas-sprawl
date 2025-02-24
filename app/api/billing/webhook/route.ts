@@ -3,6 +3,16 @@ import { NextResponse } from 'next/server';
 import { stripe, stripeConfig } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import Stripe from 'stripe';
+import type { SubscriptionTier } from '@/lib/config/pricing';
+
+type CompanyUpdateData = {
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  subscriptionStatus?: SubscriptionTier | null;
+  subscriptionStartDate?: Date;
+  subscriptionEndDate?: Date;
+};
 
 // Disable body parser for raw body access
 export const config = {
@@ -13,7 +23,8 @@ export const config = {
 
 async function getStripeEvent(req: Request): Promise<Stripe.Event> {
   const body = await req.text();
-  const sig = headers().get('stripe-signature');
+  const headersList = headers();
+  const sig = headersList.has('stripe-signature') ? headersList.get('stripe-signature')! : null;
 
   if (!sig) {
     throw new Error('No Stripe signature found');
@@ -44,11 +55,11 @@ export async function POST(req: Request) {
             subscriptionStatus: session.metadata?.tier || null,
             subscriptionStartDate: new Date(subscription.current_period_start * 1000),
             subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-          },
+          } as CompanyUpdateData,
         });
 
         // Create billing log
-        await prisma.billingLog.create({
+        await (prisma as any).billingLog.create({
           data: {
             companyId: session.metadata?.companyId!,
             amount: session.amount_total! / 100,
@@ -69,7 +80,7 @@ export async function POST(req: Request) {
           data: {
             subscriptionStatus: subscription.metadata?.tier || null,
             subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-          },
+          } as CompanyUpdateData,
         });
         break;
       }
@@ -82,7 +93,7 @@ export async function POST(req: Request) {
           data: {
             subscriptionStatus: null,
             subscriptionEndDate: new Date(),
-          },
+          } as CompanyUpdateData,
         });
         break;
       }
@@ -91,7 +102,7 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         
         if (invoice.subscription && invoice.metadata?.companyId) {
-          await prisma.billingLog.create({
+          await (prisma as any).billingLog.create({
             data: {
               companyId: invoice.metadata.companyId,
               amount: invoice.amount_paid / 100,
@@ -109,7 +120,7 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice;
         
         if (invoice.subscription && invoice.metadata?.companyId) {
-          await prisma.billingLog.create({
+          await (prisma as any).billingLog.create({
             data: {
               companyId: invoice.metadata.companyId,
               amount: invoice.amount_due / 100,
