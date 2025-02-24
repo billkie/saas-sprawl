@@ -1,17 +1,21 @@
 import { stripe } from '@/lib/stripe';
-import { PRICING_TIERS } from '@/lib/config/pricing';
-import { BillingStatus, Company, Prisma, PrismaClient } from '@prisma/client';
+import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
+import type { Company, Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+
+type CompanyWithStripe = Company & {
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripePriceId: string | null;
+  subscriptionStatus: SubscriptionTier | null;
+  subscriptionStartDate: Date | null;
+  subscriptionEndDate: Date | null;
+};
 
 export async function createOrUpdateCustomer(companyId: string, email: string) {
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: {
-      id: true,
-      name: true,
-      stripeCustomerId: true,
-    },
-  });
+  }) as CompanyWithStripe | null;
 
   if (!company) {
     throw new Error('Company not found');
@@ -34,7 +38,9 @@ export async function createOrUpdateCustomer(companyId: string, email: string) {
     // Update company with Stripe customer ID
     await prisma.company.update({
       where: { id: companyId },
-      data: { stripeCustomerId: customer.id },
+      data: {
+        stripeCustomerId: customer.id,
+      } as Prisma.CompanyUpdateInput,
     });
   }
 
@@ -44,7 +50,7 @@ export async function createOrUpdateCustomer(companyId: string, email: string) {
 export async function createSubscription(
   companyId: string,
   customerId: string,
-  tier: Prisma.SubscriptionTier
+  tier: SubscriptionTier
 ) {
   const pricingTier = PRICING_TIERS[tier];
   const priceId = process.env.STRIPE_USE_LIVE_MODE === 'true'
@@ -72,17 +78,17 @@ export async function createSubscription(
       subscriptionStatus: tier,
       subscriptionStartDate: new Date(subscription.current_period_start * 1000),
       subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-    },
+    } as Prisma.CompanyUpdateInput,
   });
 
   // Create billing log
   const invoice = subscription.latest_invoice as any;
-  await prisma.billingLog.create({
+  await prisma.billing_log.create({
     data: {
       companyId,
       amount: invoice.amount_due / 100, // Convert from cents
       currency: invoice.currency,
-      status: BillingStatus.PENDING,
+      status: 'PENDING',
       stripeInvoiceId: invoice.id,
       stripePaymentIntentId: invoice.payment_intent?.id,
       description: `Subscription started - ${pricingTier.name} tier`,
@@ -99,7 +105,9 @@ export async function cancelSubscription(subscriptionId: string) {
   const subscription = await stripe.subscriptions.cancel(subscriptionId);
   
   const company = await prisma.company.findFirst({
-    where: { stripeSubscriptionId: subscriptionId },
+    where: {
+      stripeSubscriptionId: subscriptionId,
+    } as Prisma.CompanyWhereInput,
   });
 
   if (company) {
@@ -107,7 +115,7 @@ export async function cancelSubscription(subscriptionId: string) {
       where: { id: company.id },
       data: {
         subscriptionEndDate: new Date(subscription.current_period_end * 1000),
-      },
+      } as Prisma.CompanyUpdateInput,
     });
   }
 
@@ -116,7 +124,7 @@ export async function cancelSubscription(subscriptionId: string) {
 
 export async function updateSubscription(
   subscriptionId: string,
-  newTier: Prisma.SubscriptionTier
+  newTier: SubscriptionTier
 ) {
   const pricingTier = PRICING_TIERS[newTier];
   const priceId = process.env.STRIPE_USE_LIVE_MODE === 'true'
@@ -138,7 +146,9 @@ export async function updateSubscription(
 
   // Update company details
   const company = await prisma.company.findFirst({
-    where: { stripeSubscriptionId: subscriptionId },
+    where: {
+      stripeSubscriptionId: subscriptionId,
+    } as Prisma.CompanyWhereInput,
   });
 
   if (company) {
@@ -147,16 +157,16 @@ export async function updateSubscription(
       data: {
         subscriptionStatus: newTier,
         stripePriceId: priceId,
-      },
+      } as Prisma.CompanyUpdateInput,
     });
 
     // Log the change
-    await prisma.billingLog.create({
+    await prisma.billing_log.create({
       data: {
         companyId: company.id,
         amount: pricingTier.price,
         currency: 'USD',
-        status: BillingStatus.PENDING,
+        status: 'PENDING',
         description: `Subscription updated to ${pricingTier.name} tier`,
       },
     });
@@ -170,20 +180,22 @@ export async function handleSubscriptionUpdated(
   status: string
 ) {
   const company = await prisma.company.findFirst({
-    where: { stripeSubscriptionId: subscriptionId },
+    where: {
+      stripeSubscriptionId: subscriptionId,
+    } as Prisma.CompanyWhereInput,
   });
 
   if (!company) return;
 
   if (status === 'active') {
     // Update billing log status
-    await prisma.billingLog.updateMany({
+    await prisma.billing_log.updateMany({
       where: {
         companyId: company.id,
-        status: BillingStatus.PENDING,
+        status: 'PENDING',
       },
       data: {
-        status: BillingStatus.PAID,
+        status: 'PAID',
       },
     });
   } else if (status === 'canceled' || status === 'unpaid') {
@@ -192,7 +204,7 @@ export async function handleSubscriptionUpdated(
       data: {
         subscriptionStatus: null,
         subscriptionEndDate: new Date(),
-      },
+      } as Prisma.CompanyUpdateInput,
     });
   }
 } 

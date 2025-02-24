@@ -1,7 +1,11 @@
-import { Prisma } from '@prisma/client';
+export enum SubscriptionTier {
+  BASIC = 'BASIC',
+  GROWTH = 'GROWTH',
+  ENTERPRISE = 'ENTERPRISE',
+}
 
 export interface PricingTier {
-  id: Prisma.SubscriptionTier;
+  id: SubscriptionTier;
   name: string;
   price: number;
   appLimit: number;
@@ -12,9 +16,9 @@ export interface PricingTier {
   features: string[];
 }
 
-export const PRICING_TIERS: Record<Prisma.SubscriptionTier, PricingTier> = {
-  BASIC: {
-    id: 'BASIC',
+export const PRICING_TIERS: Record<SubscriptionTier, PricingTier> = {
+  [SubscriptionTier.BASIC]: {
+    id: SubscriptionTier.BASIC,
     name: 'Basic',
     price: 29,
     appLimit: 20,
@@ -29,8 +33,8 @@ export const PRICING_TIERS: Record<Prisma.SubscriptionTier, PricingTier> = {
       'Email notifications',
     ],
   },
-  GROWTH: {
-    id: 'GROWTH',
+  [SubscriptionTier.GROWTH]: {
+    id: SubscriptionTier.GROWTH,
     name: 'Growth',
     price: 99,
     appLimit: 100,
@@ -47,8 +51,8 @@ export const PRICING_TIERS: Record<Prisma.SubscriptionTier, PricingTier> = {
       'Usage analytics',
     ],
   },
-  ENTERPRISE: {
-    id: 'ENTERPRISE',
+  [SubscriptionTier.ENTERPRISE]: {
+    id: SubscriptionTier.ENTERPRISE,
     name: 'Enterprise',
     price: 1000,
     appLimit: -1, // -1 indicates unlimited

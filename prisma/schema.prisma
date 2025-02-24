@@ -28,9 +28,9 @@ model Company {
   quickbooks    QuickBooksIntegration?
   google        GoogleWorkspaceIntegration?
   discoveredApps DiscoveredApp[]
-  stripePriceId String?
   stripeCustomerId String?
   stripeSubscriptionId String?
+  stripePriceId String?
   subscriptionStatus SubscriptionTier?
   subscriptionStartDate DateTime?
   subscriptionEndDate DateTime?
@@ -211,6 +211,7 @@ enum SubscriptionTier {
   ENTERPRISE
 }
 
+/// @map("billing_log")
 model BillingLog {
   id            String   @id @default(cuid())
   companyId     String
