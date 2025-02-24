@@ -4,6 +4,13 @@ import { stripe, stripeConfig } from '@/lib/stripe';
 import prisma from '@/lib/prisma';
 import Stripe from 'stripe';
 import type { SubscriptionTier } from '@/lib/config/pricing';
+import { PRICING_TIERS } from '@/lib/config/pricing';
+import {
+  sendSubscriptionConfirmation,
+  sendPaymentSuccessEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionCanceledEmail,
+} from '@/lib/email';
 
 type CompanyUpdateData = {
   stripeCustomerId?: string;
@@ -38,6 +45,18 @@ async function getStripeEvent(req: Request): Promise<Stripe.Event> {
   );
 }
 
+async function getCompanyWithOwner(companyId: string) {
+  return prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      users: {
+        where: { role: 'OWNER' },
+        include: { user: true },
+      },
+    },
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const event = await getStripeEvent(req);
@@ -69,6 +88,22 @@ export async function POST(req: Request) {
             description: `Subscription payment - ${session.metadata?.tier} tier`,
           },
         });
+
+        // Send confirmation email
+        const company = await getCompanyWithOwner(session.metadata?.companyId!);
+        if (company && company.users[0]?.user.email) {
+          const tier = session.metadata?.tier as SubscriptionTier;
+          await sendSubscriptionConfirmation(
+            company.users[0].user.email,
+            {
+              companyName: company.name,
+              planName: PRICING_TIERS[tier].name,
+              amount: session.amount_total! / 100,
+              currency: session.currency!,
+              nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+            }
+          );
+        }
         break;
       }
 
@@ -95,6 +130,20 @@ export async function POST(req: Request) {
             subscriptionEndDate: new Date(),
           } as CompanyUpdateData,
         });
+
+        // Send cancellation email
+        const company = await getCompanyWithOwner(subscription.metadata?.companyId!);
+        if (company && company.users[0]?.user.email) {
+          const tier = subscription.metadata?.tier as SubscriptionTier;
+          await sendSubscriptionCanceledEmail(
+            company.users[0].user.email,
+            {
+              companyName: company.name,
+              planName: PRICING_TIERS[tier].name,
+              endDate: new Date(subscription.current_period_end * 1000).toISOString(),
+            }
+          );
+        }
         break;
       }
 
@@ -112,6 +161,23 @@ export async function POST(req: Request) {
               description: `Subscription renewal - ${invoice.metadata.tier} tier`,
             },
           });
+
+          // Send success email
+          const company = await getCompanyWithOwner(invoice.metadata.companyId);
+          if (company && company.users[0]?.user.email) {
+            const tier = invoice.metadata.tier as SubscriptionTier;
+            const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+            await sendPaymentSuccessEmail(
+              company.users[0].user.email,
+              {
+                companyName: company.name,
+                planName: PRICING_TIERS[tier].name,
+                amount: invoice.amount_paid / 100,
+                currency: invoice.currency,
+                nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+              }
+            );
+          }
         }
         break;
       }
@@ -130,6 +196,22 @@ export async function POST(req: Request) {
               description: `Failed payment - ${invoice.metadata.tier} tier`,
             },
           });
+
+          // Send failure email
+          const company = await getCompanyWithOwner(invoice.metadata.companyId);
+          if (company && company.users[0]?.user.email) {
+            const tier = invoice.metadata.tier as SubscriptionTier;
+            await sendPaymentFailedEmail(
+              company.users[0].user.email,
+              {
+                companyName: company.name,
+                planName: PRICING_TIERS[tier].name,
+                amount: invoice.amount_due / 100,
+                currency: invoice.currency,
+                retryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+              }
+            );
+          }
         }
         break;
       }

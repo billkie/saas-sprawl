@@ -22,6 +22,7 @@
     "@hookform/resolvers": "latest",
     "@prisma/client": "latest",
     "@radix-ui/react-icons": "latest",
+    "@sendgrid/mail": "^8.1.4",
     "@tanstack/react-query": "latest",
     "axios": "^1.7.9",
     "bullmq": "^5.41.5",
