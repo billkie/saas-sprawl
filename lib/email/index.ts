@@ -11,11 +11,10 @@ const sender = {
 
 // Email template IDs
 export const TEMPLATE_IDS = {
-  RENEWAL_REMINDER: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  RENEWAL_DUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  RENEWAL_OVERDUE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  SYNC_SUCCESS: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  SYNC_FAILURE: 'd-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  RENEWAL_DUE: 'd-b875dbafc43f41d481f398861784a5cb',
+  RENEWAL_OVERDUE: 'd-6a3cbadc430f4528a6c3a32fbf74f2d5',
+  SYNC_SUCCESS: 'd-d3020900a5d14df9acca37ebf995b593',
+  SYNC_FAILURE: 'd-32ca7365db2c41e8b338fa7d62b0ae75',
 };
 
 export interface EmailData {
