@@ -63,13 +63,14 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "autoprefixer": "latest",
+    "autoprefixer": "^10.4.17",
     "eslint": "latest",
     "eslint-config-next": "latest",
-    "postcss": "latest",
+    "postcss": "^8.4.35",
     "prettier": "latest",
     "prisma": "latest",
-    "tailwindcss": "latest",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "latest"
   }
 }

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 import { stripe } from '@/lib/stripe';
 import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export const POST = withApiAuthRequired(async function POST(req: Request) {
   try {

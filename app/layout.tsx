@@ -17,11 +17,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark antialiased" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={`${inter.className} min-h-screen bg-background antialiased`}>
+      <body className={`${inter.className} min-h-screen bg-background text-foreground`}>
         <UserProvider>
           <ThemeProvider
             attribute="class"

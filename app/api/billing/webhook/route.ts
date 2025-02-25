@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { stripe, stripeConfig } from '@/lib/stripe';
-import prisma from '@/lib/prisma';
+import { stripe } from '@/lib/stripe';
+import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 import type { SubscriptionTier } from '@/lib/config/pricing';
 import { PRICING_TIERS } from '@/lib/config/pricing';
@@ -30,18 +30,18 @@ export const config = {
 
 async function getStripeEvent(req: Request): Promise<Stripe.Event> {
   const body = await req.text();
-  const headersList = headers();
-  const sig = headersList.has('stripe-signature') ? headersList.get('stripe-signature')! : null;
+  const headersList = await headers();
+  const signature = headersList.get('stripe-signature');
 
-  if (!sig) {
+  if (!signature) {
     throw new Error('No Stripe signature found');
   }
 
   // Verify webhook signature
   return stripe.webhooks.constructEvent(
     body,
-    sig,
-    stripeConfig.webhookSecret
+    signature,
+    process.env.STRIPE_WEBHOOK_SECRET!
   );
 }
 
@@ -96,11 +96,13 @@ export async function POST(req: Request) {
           await sendSubscriptionConfirmation(
             company.users[0].user.email,
             {
+              userName: company.users[0].user.name || 'User',
               companyName: company.name,
-              planName: PRICING_TIERS[tier].name,
+              subscriptionName: PRICING_TIERS[tier].name,
               amount: session.amount_total! / 100,
               currency: session.currency!,
-              nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+              startDate: new Date(subscription.current_period_start * 1000).toISOString(),
+              managementUrl: `${process.env.AUTH0_BASE_URL}/dashboard/billing`
             }
           );
         }
@@ -138,9 +140,10 @@ export async function POST(req: Request) {
           await sendSubscriptionCanceledEmail(
             company.users[0].user.email,
             {
+              userName: company.users[0].user.name || 'User',
               companyName: company.name,
-              planName: PRICING_TIERS[tier].name,
-              endDate: new Date(subscription.current_period_end * 1000).toISOString(),
+              subscriptionName: PRICING_TIERS[tier].name,
+              endDate: new Date(subscription.current_period_end * 1000).toISOString()
             }
           );
         }
@@ -170,11 +173,13 @@ export async function POST(req: Request) {
             await sendPaymentSuccessEmail(
               company.users[0].user.email,
               {
+                userName: company.users[0].user.name || 'User',
                 companyName: company.name,
-                planName: PRICING_TIERS[tier].name,
+                subscriptionName: PRICING_TIERS[tier].name,
                 amount: invoice.amount_paid / 100,
                 currency: invoice.currency,
-                nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+                paymentDate: new Date(invoice.created * 1000).toISOString(),
+                nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString()
               }
             );
           }
@@ -204,11 +209,14 @@ export async function POST(req: Request) {
             await sendPaymentFailedEmail(
               company.users[0].user.email,
               {
+                userName: company.users[0].user.name || 'User',
                 companyName: company.name,
-                planName: PRICING_TIERS[tier].name,
+                subscriptionName: PRICING_TIERS[tier].name,
                 amount: invoice.amount_due / 100,
                 currency: invoice.currency,
-                retryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+                failureDate: new Date(invoice.created * 1000).toISOString(),
+                retryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                error: 'Payment failed'
               }
             );
           }

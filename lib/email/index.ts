@@ -11,10 +11,15 @@ const sender = {
 
 // Email template IDs
 export const TEMPLATE_IDS = {
+  RENEWAL_REMINDER: 'd-0123456789abcdef0123456789abcdef',
   RENEWAL_DUE: 'd-b875dbafc43f41d481f398861784a5cb',
   RENEWAL_OVERDUE: 'd-6a3cbadc430f4528a6c3a32fbf74f2d5',
   SYNC_SUCCESS: 'd-d3020900a5d14df9acca37ebf995b593',
   SYNC_FAILURE: 'd-32ca7365db2c41e8b338fa7d62b0ae75',
+  SUBSCRIPTION_CONFIRMATION: 'd-1234567890abcdef1234567890abcdef',
+  SUBSCRIPTION_CANCELED: 'd-abcdef1234567890abcdef1234567890',
+  PAYMENT_SUCCESS: 'd-7890abcdef1234567890abcdef123456',
+  PAYMENT_FAILED: 'd-def1234567890abcdef1234567890abc',
 };
 
 export interface EmailData {
@@ -164,6 +169,119 @@ export async function sendRenewalReminder(
       lastChargeDate: data.lastChargeDate ? formatDate(data.lastChargeDate) : undefined,
       isOverdue: data.daysUntilRenewal < 0,
       isDueToday: data.daysUntilRenewal === 0,
+    },
+  });
+}
+
+/**
+ * Send subscription confirmation email
+ */
+export async function sendSubscriptionConfirmation(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    subscriptionName: string;
+    amount: number;
+    currency: string;
+    startDate: string;
+    managementUrl: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.SUBSCRIPTION_CONFIRMATION,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      subscriptionName: data.subscriptionName,
+      amount: formatAmount(data.amount, data.currency),
+      startDate: formatDate(data.startDate),
+      managementUrl: data.managementUrl,
+    },
+  });
+}
+
+/**
+ * Send subscription canceled email
+ */
+export async function sendSubscriptionCanceledEmail(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    subscriptionName: string;
+    endDate: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.SUBSCRIPTION_CANCELED,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      subscriptionName: data.subscriptionName,
+      endDate: formatDate(data.endDate),
+    },
+  });
+}
+
+/**
+ * Send payment success email
+ */
+export async function sendPaymentSuccessEmail(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    subscriptionName: string;
+    amount: number;
+    currency: string;
+    paymentDate: string;
+    nextBillingDate: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.PAYMENT_SUCCESS,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      subscriptionName: data.subscriptionName,
+      amount: formatAmount(data.amount, data.currency),
+      paymentDate: formatDate(data.paymentDate),
+      nextBillingDate: formatDate(data.nextBillingDate),
+    },
+  });
+}
+
+/**
+ * Send payment failed email
+ */
+export async function sendPaymentFailedEmail(
+  to: string,
+  data: {
+    userName: string;
+    companyName: string;
+    subscriptionName: string;
+    amount: number;
+    currency: string;
+    failureDate: string;
+    retryDate: string;
+    error: string;
+  }
+) {
+  return sendEmail({
+    to,
+    templateId: TEMPLATE_IDS.PAYMENT_FAILED,
+    dynamicTemplateData: {
+      userName: data.userName,
+      companyName: data.companyName,
+      subscriptionName: data.subscriptionName,
+      amount: formatAmount(data.amount, data.currency),
+      failureDate: formatDate(data.failureDate),
+      retryDate: formatDate(data.retryDate),
+      error: data.error,
     },
   });
 }

@@ -4,15 +4,11 @@ import { handleAuth } from '@auth0/nextjs-auth0';
 const auth0Handler = handleAuth();
 
 // Create route handlers that await params
-export async function GET(req: Request, ctx: { params: { auth0: string } }) {
-  // Await params resolution before using them
-  const params = await Promise.resolve(ctx.params);
+export async function GET(req: Request, { params }: { params: { auth0: string } }) {
   return auth0Handler(req, { params });
 }
 
-export async function POST(req: Request, ctx: { params: { auth0: string } }) {
-  // Await params resolution before using them
-  const params = await Promise.resolve(ctx.params);
+export async function POST(req: Request, { params }: { params: { auth0: string } }) {
   return auth0Handler(req, { params });
 }
 
