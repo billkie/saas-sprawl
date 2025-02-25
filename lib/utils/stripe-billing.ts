@@ -1,7 +1,7 @@
 import { stripe } from '@/lib/stripe';
 import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
 import type { Company, Prisma } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 type CompanyWithStripe = Company & {
   stripeCustomerId: string | null;

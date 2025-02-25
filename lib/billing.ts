@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 export interface SubscriptionDetails {
   status: 'active' | 'canceled' | 'past_due' | 'trialing';

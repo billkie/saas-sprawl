@@ -1,96 +1,86 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import prisma from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
-import { prisma } from '@/lib/prisma';
 
-export const POST = withApiAuthRequired(async function POST(req: Request) {
+export const POST = withApiAuthRequired(async function POST(
+  req: NextRequest
+) {
   try {
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
     }
 
     const body = await req.json();
     const { tier } = body as { tier: SubscriptionTier };
 
     if (!tier || !PRICING_TIERS[tier]) {
-      return NextResponse.json({ error: 'Invalid tier' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid subscription tier' },
+        { status: 400 }
+      );
     }
 
-    // Get user's company
-    const userWithCompany = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
-        companies: {
-          include: {
-            company: true,
-          },
-        },
-      },
+      include: { companies: true },
     });
 
-    const company = userWithCompany?.companies[0]?.company;
-    if (!company) {
-      return NextResponse.json({ error: 'No company found' }, { status: 404 });
+    if (!user?.companies[0]) {
+      return NextResponse.json(
+        { error: 'No company found for user' },
+        { status: 404 }
+      );
     }
 
-    const pricingTier = PRICING_TIERS[tier];
-    const priceId = process.env.STRIPE_USE_LIVE_MODE === 'true'
-      ? pricingTier.stripePriceId.live
-      : pricingTier.stripePriceId.test;
-
-    // Create or get Stripe customer
-    let stripeCustomerId = company.stripeCustomerId;
-    if (!stripeCustomerId) {
+    const company = user.companies[0];
+    
+    // Create or retrieve Stripe customer
+    let customerId = company.stripeCustomerId;
+    if (!customerId) {
       const customer = await stripe.customers.create({
-        email: session.user.email,
+        email: user.email,
         metadata: {
           companyId: company.id,
-          companyName: company.name,
         },
       });
-      stripeCustomerId = customer.id;
-
-      // Save Stripe customer ID
+      customerId = customer.id;
+      
       await prisma.company.update({
         where: { id: company.id },
-        data: { stripeCustomerId: customer.id },
+        data: { stripeCustomerId: customerId },
       });
     }
 
-    // Create Stripe Checkout session
+    // Create Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer: stripeCustomerId,
+      customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: PRICING_TIERS[tier].stripePriceId.test,
           quantity: 1,
         },
       ],
+      success_url: `${process.env.AUTH0_BASE_URL}/dashboard/settings?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.AUTH0_BASE_URL}/dashboard/settings`,
       metadata: {
         companyId: company.id,
         tier,
       },
-      allow_promotion_codes: true,
-      billing_address_collection: 'required',
-      success_url: `${process.env.AUTH0_BASE_URL}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.AUTH0_BASE_URL}/pricing?checkout=cancelled`,
-      subscription_data: {
-        metadata: {
-          companyId: company.id,
-          tier,
-        },
-      },
     });
 
-    return NextResponse.json({ checkoutUrl: checkoutSession.url });
+    return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Checkout error:', error);
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
