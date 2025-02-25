@@ -30,9 +30,10 @@ async function checkSubscriptionAccess(subscriptionId: string, userEmail: string
   return subscription;
 }
 
+// GET handler
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -40,7 +41,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
@@ -55,9 +56,10 @@ export async function GET(
   }
 }
 
+// PUT handler
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -65,16 +67,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = subscriptionSchema.parse(body);
 
     const updatedSubscription = await prisma.subscription.update({
-      where: { id: params.id },
+      where: { id: context.params.id },
       data: validatedData,
     });
 
@@ -95,9 +97,10 @@ export async function PUT(
   }
 }
 
+// DELETE handler
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  req: Request,
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -105,13 +108,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
     await prisma.subscription.delete({
-      where: { id: params.id },
+      where: { id: context.params.id },
     });
 
     return new NextResponse(null, { status: 204 });
