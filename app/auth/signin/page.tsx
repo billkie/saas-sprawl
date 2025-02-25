@@ -38,7 +38,7 @@ export default function SignInPage() {
           </div>
           <div className="grid gap-6">
             <Button variant="outline" asChild>
-              <a href="/api/auth/signin/google" className="flex items-center justify-center">
+              <a href="/api/auth/login" className="flex items-center justify-center">
                 <svg
                   className="mr-2 h-4 w-4"
                   aria-hidden="true"

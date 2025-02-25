@@ -1,4 +1,4 @@
-import { getSession } from 'next-auth/react';
+import { getSession } from '@auth0/nextjs-auth0';
 
 interface FetchOptions extends RequestInit {
   data?: any;
@@ -17,8 +17,8 @@ async function fetchWithAuth(url: string, options: FetchOptions = {}) {
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   
-  if (session) {
-    headers.set('Authorization', `Bearer ${session.user.id}`);
+  if (session?.user) {
+    headers.set('Authorization', `Bearer ${session.user.sub}`);
   }
 
   const response = await fetch(url, {

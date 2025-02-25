@@ -76,7 +76,7 @@ export function TopNav({ user }: TopNavProps) {
               <DropdownMenuItem
                 className="text-red-600"
                 onSelect={() => {
-                  router.push('/api/auth/signout');
+                  router.push('/api/auth/logout');
                 }}
               >
                 <LogOut className="mr-2 h-4 w-4" />

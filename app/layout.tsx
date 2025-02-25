@@ -1,8 +1,7 @@
 import { Inter } from 'next/font/google';
-import { SessionProvider } from 'next-auth/react';
+import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { auth } from '@/lib/auth';
 import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -17,12 +16,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider session={session}>
+        <UserProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -32,7 +29,7 @@ export default async function RootLayout({
             {children}
             <Toaster />
           </ThemeProvider>
-        </SessionProvider>
+        </UserProvider>
       </body>
     </html>
   );

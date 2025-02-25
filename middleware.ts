@@ -1,55 +1,30 @@
-import { withAuth } from 'next-auth/middleware';
+import { withMiddlewareAuthRequired } from '@auth0/nextjs-auth0/edge';
 import { NextResponse } from 'next/server';
-import type { NextRequestWithAuth } from 'next-auth/middleware';
+import type { NextRequest } from 'next/server';
 
-export default withAuth(
-  function middleware(request: NextRequestWithAuth) {
-    // Add auth header to all API requests
-    if (request.nextUrl.pathname.startsWith('/api')) {
-      if (request.nextauth.token) {
-        const requestHeaders = new Headers(request.headers);
-        requestHeaders.set('Authorization', `Bearer ${request.nextauth.token.sub}`);
-        return NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-      }
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export default withMiddlewareAuthRequired(
+  function middleware(request: NextRequest) {
+    // Public paths that don't require authentication
+    const publicPaths = ['/', '/auth/signin', '/pricing', '/privacy', '/terms'];
+    const path = request.nextUrl.pathname;
+    
+    if (publicPaths.includes(path)) {
+      return NextResponse.next();
+    }
+
+    // Protect API routes except auth endpoints
+    if (path.startsWith('/api') && !path.startsWith('/api/auth')) {
+      // Auth0 middleware already handles authentication
+      return NextResponse.next();
+    }
+
+    // Protect dashboard routes
+    if (path.startsWith('/dashboard')) {
+      // Auth0 middleware already handles authentication
+      return NextResponse.next();
     }
 
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ req, token }) => {
-        // Public paths that don't require authentication
-        if (
-          req.nextUrl.pathname === '/' ||
-          req.nextUrl.pathname === '/auth/signin' ||
-          req.nextUrl.pathname === '/pricing' ||
-          req.nextUrl.pathname === '/privacy' ||
-          req.nextUrl.pathname === '/terms'
-        ) {
-          return true;
-        }
-
-        // Protect API routes except auth endpoints
-        if (
-          req.nextUrl.pathname.startsWith('/api') &&
-          !req.nextUrl.pathname.startsWith('/api/auth')
-        ) {
-          return !!token;
-        }
-
-        // Protect dashboard routes
-        if (req.nextUrl.pathname.startsWith('/dashboard')) {
-          return !!token;
-        }
-
-        return true;
-      },
-    },
   }
 );
 
@@ -61,7 +36,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
+     * - api/auth routes (Auth0 handles these)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public|api/auth/).*)',
   ],
 }; 

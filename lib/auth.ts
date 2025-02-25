@@ -1,64 +1,52 @@
-import { PrismaAdapter } from '@auth/prisma-adapter';
-import { DefaultSession, NextAuthOptions, Session } from 'next-auth';
-import { JWT } from 'next-auth/jwt';
-import { getServerSession } from 'next-auth/next';
-import GoogleProvider from 'next-auth/providers/google';
+import { getSession } from '@auth0/nextjs-auth0';
 import { prisma } from '@/lib/prisma';
 
-declare module 'next-auth' {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-    } & DefaultSession['user'];
-  }
+export interface User {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
 }
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: 'jwt',
-  },
-  pages: {
-    signIn: '/auth/signin',
-  },
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  callbacks: {
-    async session({ token, session }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.image = token.picture as string | undefined;
+export interface Session {
+  user: User;
+}
+
+// Helper function to get the current session
+export async function auth(): Promise<Session | null> {
+  try {
+    const auth0Session = await getSession();
+    
+    if (!auth0Session?.user) {
+      return null;
+    }
+    
+    // Find or create user in the database
+    const user = await prisma.user.upsert({
+      where: { 
+        email: auth0Session.user.email 
+      },
+      update: {
+        name: auth0Session.user.name,
+        image: auth0Session.user.picture,
+      },
+      create: {
+        email: auth0Session.user.email,
+        name: auth0Session.user.name,
+        image: auth0Session.user.picture,
+      },
+    });
+    
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
       }
-      return session;
-    },
-    async jwt({ token, user }) {
-      const dbUser = await prisma.user.findFirst({
-        where: {
-          email: token.email || undefined,
-        },
-      });
-
-      if (!dbUser) {
-        if (user) {
-          token.id = user?.id;
-        }
-        return token;
-      }
-
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image || undefined,
-      };
-    },
-  },
-};
-
-export const auth = () => getServerSession(authOptions); 
+    };
+  } catch (error) {
+    console.error('Error getting Auth0 session:', error);
+    return null;
+  }
+} 
