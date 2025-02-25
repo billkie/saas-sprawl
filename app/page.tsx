@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { Button } from '@/components/ui/button';
+import type { Route } from 'next';
 
 const routes = {
-  home: '/',
-  pricing: '/pricing',
-  docs: '/docs',
-  privacy: '/privacy',
-  terms: '/terms',
-  dashboard: '/dashboard',
-  login: '/api/auth/login',
-  signup: '/api/auth/signup',
+  home: '/' as Route,
+  pricing: '/pricing' as Route,
+  docs: '/docs' as Route,
+  privacy: '/privacy' as Route,
+  terms: '/terms' as Route,
+  dashboard: '/dashboard' as Route,
+  login: '/api/auth/login' as Route,
+  signup: '/api/auth/signup' as Route,
+  logout: '/api/auth/logout' as Route,
 } as const;
 
 function AuthButtons() {
@@ -34,6 +36,11 @@ function AuthButtons() {
         <Link href={routes.dashboard}>
           <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
             My Dashboard
+          </Button>
+        </Link>
+        <Link href={routes.logout}>
+          <Button variant="ghost" size="lg">
+            Log out
           </Button>
         </Link>
       </div>
