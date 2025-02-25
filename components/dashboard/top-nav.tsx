@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +23,6 @@ interface TopNavProps {
 }
 
 export function TopNav({ user }: TopNavProps) {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -67,16 +65,18 @@ export function TopNav({ user }: TopNavProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
+              <DropdownMenuItem
+                onSelect={() => {
+                  window.location.href = '/dashboard/profile';
+                }}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-600"
                 onSelect={() => {
-                  router.push('/api/auth/logout');
+                  window.location.href = '/api/auth/logout';
                 }}
               >
                 <LogOut className="mr-2 h-4 w-4" />
