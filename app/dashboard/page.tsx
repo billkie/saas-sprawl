@@ -4,6 +4,7 @@ import { getDashboardData } from '@/lib/dashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendIndicator } from '@/components/ui/trend-indicator';
 import { CreditCard, Package, Bell } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Dashboard - Ziruna',
@@ -22,8 +23,8 @@ function formatCurrency(amount: number, currency: string) {
 export default async function DashboardPage() {
   const session = await auth();
 
-  if (!session?.user) {
-    return null;
+  if (!session?.user?.id) {
+    redirect('/auth/signin');
   }
 
   const dashboardData = await getDashboardData(session.user.id);

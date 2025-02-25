@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { CalendarIcon, Plus } from 'lucide-react';
+import { PaymentFrequency, BillingType } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -50,11 +51,13 @@ const formSchema = z.object({
   description: z.string().optional(),
   monthlyAmount: z.coerce.number().min(0, 'Amount must be positive'),
   currency: z.string().min(1, 'Currency is required'),
-  billingFrequency: z.string().min(1, 'Billing frequency is required'),
+  paymentFrequency: z.nativeEnum(PaymentFrequency),
+  billingType: z.nativeEnum(BillingType).optional(),
   category: z.string().optional(),
-  autoRenew: z.boolean(),
+  autoRenewal: z.boolean(),
   notifyBefore: z.coerce.number().min(0).optional(),
   nextChargeDate: z.date().optional(),
+  planId: z.string().min(1, 'Plan ID is required'),
 });
 
 export function AddSubscriptionButton() {
@@ -63,9 +66,10 @@ export function AddSubscriptionButton() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      autoRenew: true,
+      autoRenewal: true,
       currency: 'USD',
-      billingFrequency: 'MONTHLY',
+      paymentFrequency: PaymentFrequency.MONTHLY,
+      planId: 'default',
     },
   });
 
@@ -173,10 +177,10 @@ export function AddSubscriptionButton() {
             </div>
             <FormField
               control={form.control}
-              name="billingFrequency"
+              name="paymentFrequency"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Billing Frequency</FormLabel>
+                  <FormLabel>Payment Frequency</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -187,9 +191,36 @@ export function AddSubscriptionButton() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="QUARTERLY">Quarterly</SelectItem>
-                      <SelectItem value="YEARLY">Yearly</SelectItem>
+                      <SelectItem value={PaymentFrequency.MONTHLY}>Monthly</SelectItem>
+                      <SelectItem value={PaymentFrequency.QUARTERLY}>Quarterly</SelectItem>
+                      <SelectItem value={PaymentFrequency.ANNUAL}>Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="billingType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Billing Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select billing type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={BillingType.CREDIT_CARD}>Credit Card</SelectItem>
+                      <SelectItem value={BillingType.ACH}>ACH</SelectItem>
+                      <SelectItem value={BillingType.WIRE}>Wire</SelectItem>
+                      <SelectItem value={BillingType.CHECK}>Check</SelectItem>
+                      <SelectItem value={BillingType.OTHER}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -268,13 +299,13 @@ export function AddSubscriptionButton() {
             />
             <FormField
               control={form.control}
-              name="autoRenew"
+              name="autoRenewal"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel>Auto Renew</FormLabel>
+                    <FormLabel className="text-base">Auto Renewal</FormLabel>
                     <FormDescription>
-                      Automatically renew this subscription
+                      Whether this subscription renews automatically
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -287,7 +318,9 @@ export function AddSubscriptionButton() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add Subscription</Button>
+              <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
+                Add Subscription
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -1,8 +1,9 @@
 import prisma from '@/lib/prisma';
+import { SubscriptionTier } from '@prisma/client';
 
 export interface SubscriptionDetails {
-  status: 'active' | 'canceled' | 'past_due' | 'trialing';
-  plan: 'free' | 'pro' | 'enterprise';
+  status: 'ACTIVE' | 'CANCELED' | 'PAST_DUE' | 'TRIALING';
+  plan: SubscriptionTier;
   currentPeriodEnd: Date | null;
   subscriptionId: string | null;
   usage: {
@@ -17,7 +18,7 @@ export interface SubscriptionDetails {
 }
 
 const PLAN_LIMITS = {
-  free: {
+  BASIC: {
     subscriptions: 5,
     features: {
       multiUser: false,
@@ -25,7 +26,7 @@ const PLAN_LIMITS = {
       advancedAnalytics: false,
     },
   },
-  pro: {
+  GROWTH: {
     subscriptions: 50,
     features: {
       multiUser: true,
@@ -33,7 +34,7 @@ const PLAN_LIMITS = {
       advancedAnalytics: true,
     },
   },
-  enterprise: {
+  ENTERPRISE: {
     subscriptions: Infinity,
     features: {
       multiUser: true,
@@ -46,40 +47,36 @@ const PLAN_LIMITS = {
 export async function getSubscriptionDetails(
   userId: string
 ): Promise<SubscriptionDetails> {
-  const userWithCompany = await prisma.user.findFirst({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
       companies: {
         include: {
-          company: {
-            include: {
-              subscription: true,
-              subscriptions: true,
-            },
-          },
+          company: true,
         },
       },
     },
   });
 
-  const company = userWithCompany?.companies[0]?.company;
-  if (!company) {
+  if (!user?.companies[0]?.company) {
     throw new Error('No company found');
   }
 
-  const subscription = company.subscription;
-  const trackedSubscriptions = company.subscriptions.length;
+  const company = user.companies[0].company;
+  const subscriptionTier = company.subscriptionStatus || 'BASIC';
+  const planLimits = PLAN_LIMITS[subscriptionTier];
 
-  const plan = (subscription?.plan as 'free' | 'pro' | 'enterprise') || 'free';
-  const planLimits = PLAN_LIMITS[plan];
+  const subscriptions = await prisma.subscription.count({
+    where: { companyId: company.id },
+  });
 
   return {
-    status: (subscription?.status as SubscriptionDetails['status']) || 'trialing',
-    plan,
-    currentPeriodEnd: subscription?.currentPeriodEnd || null,
-    subscriptionId: subscription?.stripeSubscriptionId || null,
+    status: 'ACTIVE',
+    plan: subscriptionTier,
+    currentPeriodEnd: company.subscriptionEndDate,
+    subscriptionId: company.stripeSubscriptionId,
     usage: {
-      trackedSubscriptions,
+      trackedSubscriptions: subscriptions,
       allowedSubscriptions: planLimits.subscriptions,
     },
     features: planLimits.features,

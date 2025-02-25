@@ -1,19 +1,21 @@
 import prisma from '@/lib/prisma';
+import { PaymentFrequency, BillingType, AppSource, SubscriptionStatus } from '@prisma/client';
 
 export interface SubscriptionWithDetails {
   id: string;
   vendorName: string;
   description: string | null;
-  status: string;
+  status: SubscriptionStatus;
   monthlyAmount: number;
   currency: string;
-  lastChargeDate: Date | null;
+  lastTransactionDate: Date | null;
   nextChargeDate: Date | null;
-  billingFrequency: string;
+  paymentFrequency: PaymentFrequency;
+  billingType: BillingType | null;
   category: string | null;
-  autoRenew: boolean;
+  autoRenewal: boolean;
   notifyBefore: number | null;
-  source: 'MANUAL' | 'QUICKBOOKS' | 'GOOGLE_WORKSPACE';
+  source: AppSource;
   discoveredApps: {
     name: string;
     website: string | null;
@@ -26,7 +28,7 @@ export interface SubscriptionWithDetails {
   };
 }
 
-export async function getSubscriptions(userId: string) {
+export async function getSubscriptions(userId: string): Promise<SubscriptionWithDetails[]> {
   // Get user's company
   const userWithCompany = await prisma.user.findFirst({
     where: { id: userId },
@@ -49,7 +51,21 @@ export async function getSubscriptions(userId: string) {
     where: {
       companyId: company.id,
     },
-    include: {
+    select: {
+      id: true,
+      vendorName: true,
+      description: true,
+      status: true,
+      monthlyAmount: true,
+      currency: true,
+      lastTransactionDate: true,
+      nextChargeDate: true,
+      paymentFrequency: true,
+      billingType: true,
+      category: true,
+      autoRenewal: true,
+      notifyBefore: true,
+      source: true,
       discoveredApps: {
         select: {
           name: true,
@@ -71,7 +87,7 @@ export async function getSubscriptions(userId: string) {
     ],
   });
 
-  return subscriptions;
+  return subscriptions as SubscriptionWithDetails[];
 }
 
 export async function getSubscriptionCategories() {
@@ -95,12 +111,14 @@ export interface CreateSubscriptionData {
   vendorName: string;
   description?: string;
   monthlyAmount: number;
-  currency: string;
-  billingFrequency: string;
+  currency?: string;
+  paymentFrequency: PaymentFrequency;
+  billingType?: BillingType;
   category?: string;
-  autoRenew: boolean;
+  autoRenewal?: boolean;
   notifyBefore?: number;
   nextChargeDate?: Date;
+  planId: string;
 }
 
 export async function createSubscription(
@@ -131,6 +149,8 @@ export async function createSubscription(
       companyId: company.id,
       status: 'ACTIVE',
       source: 'MANUAL',
+      autoRenewal: data.autoRenewal ?? true,
+      currency: data.currency ?? 'USD',
     },
   });
 

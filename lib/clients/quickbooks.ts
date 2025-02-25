@@ -19,8 +19,27 @@ const queryResponseSchema = z.object({
   })
 });
 
+const companyInfoSchema = z.object({
+  CompanyName: z.string(),
+  LegalName: z.string().optional(),
+  CompanyAddr: z.object({
+    Line1: z.string().optional(),
+    City: z.string().optional(),
+    Country: z.string().optional(),
+    CountrySubDivisionCode: z.string().optional(),
+    PostalCode: z.string().optional()
+  }).optional(),
+  Email: z.object({
+    Address: z.string().optional()
+  }).optional(),
+  WebAddr: z.object({
+    URI: z.string().optional()
+  }).optional()
+});
+
 export type Transaction = z.infer<typeof transactionSchema>;
 export type QueryResponse = z.infer<typeof queryResponseSchema>;
+export type CompanyInfo = z.infer<typeof companyInfoSchema>;
 
 interface QuickBooksConfig {
   clientId: string;
@@ -36,9 +55,14 @@ interface TokenSet {
   realmId: string;
 }
 
+interface ExtendedQuickBooks extends QuickBooks {
+  realmId: string;
+  getCompanyInfo: (params: unknown, callback: (err: Error | null, companyInfo: unknown) => void) => void;
+}
+
 export class QuickBooksClient {
   private oauthClient: OAuthClient;
-  private qboClient: QuickBooks | null = null;
+  private qboClient: ExtendedQuickBooks | null = null;
   private config: QuickBooksConfig;
 
   constructor(config: QuickBooksConfig) {
@@ -115,7 +139,7 @@ export class QuickBooksClient {
       null, // minor version
       '2.0', // oauth version
       tokens.refreshToken
-    );
+    ) as ExtendedQuickBooks;
   }
 
   /**
@@ -149,7 +173,7 @@ export class QuickBooksClient {
   /**
    * Get company info
    */
-  async getCompanyInfo(): Promise<any> {
+  async getCompanyInfo(): Promise<CompanyInfo> {
     if (!this.qboClient) {
       throw new Error('QuickBooks client not initialized');
     }
@@ -160,7 +184,13 @@ export class QuickBooksClient {
           reject(err);
           return;
         }
-        resolve(companyInfo);
+
+        try {
+          const validatedInfo = companyInfoSchema.parse(companyInfo);
+          resolve(validatedInfo);
+        } catch (error) {
+          reject(new Error('Invalid company info format from QuickBooks API'));
+        }
       });
     });
   }
