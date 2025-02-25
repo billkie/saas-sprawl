@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { QuickBooksClient, Transaction } from '@/lib/clients/quickbooks';
 import { analyzeTransactions, PaymentFrequency } from '@/lib/utils/transaction-analysis';
+import { BillingType } from '@prisma/client';
 
 const QUICKBOOKS_CLIENT_ID = process.env.QUICKBOOKS_CLIENT_ID!;
 const QUICKBOOKS_CLIENT_SECRET = process.env.QUICKBOOKS_CLIENT_SECRET!;
@@ -105,12 +106,8 @@ async function processTransactions(transactions: Transaction[], companyId: strin
       nextChargeDate,
       // Default to notifying 14 days before next charge
       notifyBefore: 14,
-      // Try to detect payment method from transaction data
-      billingType: lastTransaction.PaymentType === 'CreditCard' 
-        ? 'CREDIT_CARD' 
-        : lastTransaction.PaymentType === 'Check'
-        ? 'CHECK'
-        : 'OTHER',
+      // Default to OTHER since we can't reliably detect payment type from QuickBooks
+      billingType: BillingType.OTHER,
     };
 
     if (existingSubscription) {
@@ -149,7 +146,7 @@ async function processTransactions(transactions: Transaction[], companyId: strin
 }
 
 // POST /api/integrations/quickbooks - Start OAuth flow
-export const POST = withApiAuthRequired(async (request: Request) => {
+export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -165,10 +162,10 @@ export const POST = withApiAuthRequired(async (request: Request) => {
       { status: 500 }
     );
   }
-});
+}
 
 // GET /api/integrations/quickbooks/sync - Manual sync
-export const GET = withApiAuthRequired(async (request: Request) => {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -240,4 +237,4 @@ export const GET = withApiAuthRequired(async (request: Request) => {
       { status: 500 }
     );
   }
-}); 
+} 

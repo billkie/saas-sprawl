@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { QuickBooksClient } from '@/lib/clients/quickbooks';
 
@@ -33,7 +33,7 @@ async function getUserCompany(userEmail: string) {
 }
 
 // GET /api/integrations/quickbooks/callback - OAuth callback handler
-export const GET = withApiAuthRequired(async (request: Request) => {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -88,4 +88,4 @@ export const GET = withApiAuthRequired(async (request: Request) => {
 
     return NextResponse.redirect(redirectUrl.toString());
   }
-}); 
+} 
