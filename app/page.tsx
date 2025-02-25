@@ -1,14 +1,64 @@
+'use client';
+
 import Link from 'next/link';
+import { useUser } from '@auth0/nextjs-auth0/client';
 import { Button } from '@/components/ui/button';
 
 const routes = {
   home: '/',
   pricing: '/pricing',
   docs: '/docs',
+  privacy: '/privacy',
+  terms: '/terms',
+  dashboard: '/dashboard',
   login: '/api/auth/login',
+  signup: '/api/auth/signup',
 } as const;
 
+function AuthButtons() {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center space-x-4">
+        <Button variant="ghost" size="lg" disabled>
+          Loading...
+        </Button>
+      </div>
+    );
+  }
+
+  if (user) {
+    return (
+      <div className="flex items-center space-x-4">
+        <Link href={routes.dashboard}>
+          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            My Dashboard
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center space-x-4">
+      <Link href={routes.login}>
+        <Button variant="ghost" size="lg">
+          Log in
+        </Button>
+      </Link>
+      <Link href={routes.signup}>
+        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          Sign up
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
 export default function Home() {
+  const { user } = useUser();
+
   return (
     <div className="relative min-h-screen bg-background">
       {/* Background gradient overlay */}
@@ -29,11 +79,7 @@ export default function Home() {
                 Documentation
               </Link>
             </div>
-            <Link href={routes.login}>
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                Get Started
-              </Button>
-            </Link>
+            <AuthButtons />
           </nav>
         </header>
 
@@ -42,7 +88,7 @@ export default function Home() {
           {/* New Feature Banner */}
           <div className="mb-12 text-center">
             <Link 
-              href={routes.pricing} 
+              href={routes.pricing}
               className="inline-flex items-center px-4 py-2 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
             >
               🚀 New: Automatic SaaS Discovery
@@ -59,12 +105,12 @@ export default function Home() {
               Get insights into usage, costs, and renewals.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <Link href={routes.login}>
+              <Link href={user ? routes.dashboard : routes.signup}>
                 <Button 
                   size="lg"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-8"
                 >
-                  Get Started
+                  {user ? 'Go to Dashboard' : 'Get Started'}
                 </Button>
               </Link>
               <Link href={routes.pricing}>
@@ -119,17 +165,22 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="py-12 border-t border-border">
-          <p className="text-center text-muted-foreground">
-            Built by{' '}
-            <a href="https://ziruna.com" className="text-primary hover:text-primary/90">
-              Ziruna
-            </a>
-            . The source code is available on{' '}
-            <a href="https://github.com/ziruna/saas-sprawl" className="text-primary hover:text-primary/90">
-              GitHub
-            </a>
-            .
-          </p>
+          <div className="text-center text-muted-foreground">
+            <p>
+              Built by{' '}
+              <a href="https://ziruna.com" className="text-primary hover:text-primary/90">
+                Ziruna
+              </a>
+            </p>
+            <div className="mt-4 space-x-4">
+              <Link href={routes.privacy} className="hover:text-foreground">
+                Privacy Policy
+              </Link>
+              <Link href={routes.terms} className="hover:text-foreground">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
