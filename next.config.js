@@ -10,6 +10,11 @@ const nextConfig = {
   images: {
     domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
   },
+  env: {
+    NEXT_PUBLIC_BASE_URL: process.env.VERCEL_ENV === 'production' 
+      ? 'https://ziruna.com' 
+      : 'https://dev.ziruna.com',
+  },
 }
 
 module.exports = nextConfig 
