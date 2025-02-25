@@ -1,9 +1,9 @@
 # Tunnel configuration
 tunnel: ziruna-dev
-credentials-file: ~/.cloudflared/ziruna-dev.json
+credentials-file: ./cloudflared/ziruna-dev.json
 
 # Ingress rules
 ingress:
   - hostname: dev.ziruna.com
-    service: http://localhost:3000
+    service: http://localhost:3001
   - service: http_status:404 # Return 404 for all other requests 
