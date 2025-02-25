@@ -18,7 +18,10 @@ export default async function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+      <body className={`${inter.className} min-h-screen bg-background antialiased`}>
         <UserProvider>
           <ThemeProvider
             attribute="class"
