@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -31,12 +31,12 @@ async function checkSubscriptionAccess(subscriptionId: string, userEmail: string
 }
 
 // PUT /api/subscriptions/[id]
-export const PUT = withApiAuthRequired(async function PUT(
-  req: Request,
+export async function PUT(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession(req);
+    const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -46,7 +46,7 @@ export const PUT = withApiAuthRequired(async function PUT(
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = subscriptionSchema.parse(body);
 
     const updatedSubscription = await prisma.subscription.update({
@@ -69,15 +69,15 @@ export const PUT = withApiAuthRequired(async function PUT(
       { status: 500 }
     );
   }
-});
+}
 
 // DELETE /api/subscriptions/[id]
-export const DELETE = withApiAuthRequired(async function DELETE(
-  req: Request,
+export async function DELETE(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession(req);
+    const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -99,4 +99,4 @@ export const DELETE = withApiAuthRequired(async function DELETE(
       { status: 500 }
     );
   }
-}); 
+} 
