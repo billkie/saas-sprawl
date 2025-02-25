@@ -10,31 +10,32 @@ import {
   Package,
   Bell,
 } from 'lucide-react';
+import type { Route } from 'next';
 
 const items = [
   {
     title: 'Dashboard',
-    href: '/dashboard',
+    href: '/dashboard' as Route,
     icon: LayoutDashboard,
   },
   {
     title: 'Subscriptions',
-    href: '/dashboard/subscriptions',
+    href: '/dashboard/subscriptions' as Route,
     icon: Package,
   },
   {
     title: 'Billing',
-    href: '/dashboard/billing',
+    href: '/dashboard/billing' as Route,
     icon: CreditCard,
   },
   {
     title: 'Notifications',
-    href: '/dashboard/notifications',
+    href: '/dashboard/notifications' as Route,
     icon: Bell,
   },
   {
     title: 'Settings',
-    href: '/dashboard/settings',
+    href: '/dashboard/settings' as Route,
     icon: Settings,
   },
 ];

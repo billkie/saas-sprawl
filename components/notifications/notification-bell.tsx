@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@/lib/notifications';
+import type { Route } from 'next';
 
 interface NotificationBellProps {
   userId: string;
@@ -121,7 +122,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
-                href="/dashboard/notifications"
+                href={'/dashboard/notifications' as Route}
                 className="w-full text-center text-sm font-medium"
               >
                 View all notifications

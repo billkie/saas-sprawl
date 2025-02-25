@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import type { Route } from 'next';
 
 export const metadata: Metadata = {
   title: 'Sign In - Ziruna',
@@ -13,7 +14,7 @@ export default function SignInPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-zinc-900" />
         <div className="relative z-20 flex items-center text-lg font-medium">
-          <Link href="/" className="hover:text-gray-200">
+          <Link href={'/' as Route} className="hover:text-gray-200">
             Ziruna
           </Link>
         </div>

@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
+import type { Route } from 'next';
 
 interface TopNavProps {
   user?: {
@@ -42,7 +43,7 @@ export function TopNav({ user }: TopNavProps) {
   return (
     <div className="border-b">
       <div className="flex h-16 items-center px-4">
-        <Link href="/dashboard" className="font-bold">
+        <Link href={'/dashboard' as Route} className="font-bold">
           Ziruna
         </Link>
         <div className="ml-auto flex items-center space-x-4">
