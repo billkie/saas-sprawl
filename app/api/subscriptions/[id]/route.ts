@@ -33,7 +33,7 @@ async function checkSubscriptionAccess(subscriptionId: string, userEmail: string
 // PUT /api/subscriptions/[id]
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -41,7 +41,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
@@ -50,7 +50,7 @@ export async function PUT(
     const validatedData = subscriptionSchema.parse(body);
 
     const updatedSubscription = await prisma.subscription.update({
-      where: { id: params.id },
+      where: { id: context.params.id },
       data: validatedData,
     });
 
@@ -74,7 +74,7 @@ export async function PUT(
 // DELETE /api/subscriptions/[id]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getSession();
@@ -82,13 +82,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
     await prisma.subscription.delete({
-      where: { id: params.id },
+      where: { id: context.params.id },
     });
 
     return new NextResponse(null, { status: 204 });
