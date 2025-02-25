@@ -75,7 +75,7 @@ export function AddSubscriptionButton() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      await createSubscription(values);
+      await createSubscription('', values);
       setOpen(false);
       form.reset();
       router.refresh();

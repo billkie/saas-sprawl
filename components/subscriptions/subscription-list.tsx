@@ -109,7 +109,7 @@ export function SubscriptionList({ subscriptions }: SubscriptionListProps) {
                 </div>
               </TableCell>
               <TableCell>
-                {subscription.autoRenew ? (
+                {subscription.autoRenewal ? (
                   <Badge variant="default">Yes</Badge>
                 ) : (
                   <Badge variant="secondary">No</Badge>

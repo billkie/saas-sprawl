@@ -59,7 +59,7 @@ export function BillingSettings({ subscriptionDetails }: BillingSettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-lg font-medium capitalize">{subscriptionDetails.plan}</span>
-            <Badge variant={subscriptionDetails.status === 'active' ? 'default' : 'destructive'}>
+            <Badge variant={subscriptionDetails.status === 'ACTIVE' ? 'default' : 'destructive'}>
               {subscriptionDetails.status}
             </Badge>
           </div>
@@ -83,7 +83,7 @@ export function BillingSettings({ subscriptionDetails }: BillingSettingsProps) {
           )}
         </CardContent>
         <CardFooter>
-          {subscriptionDetails.status === 'active' ? (
+          {subscriptionDetails.status === 'ACTIVE' ? (
             <Button
               variant="outline"
               className="w-full"

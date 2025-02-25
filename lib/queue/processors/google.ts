@@ -60,32 +60,47 @@ export async function syncGoogleWorkspace() {
 
       // Process discovered apps
       for (const app of apps) {
-        await prisma.discoveredApp.upsert({
+        // Generate a unique ID for the app based on company and app ID/name
+        const appIdentifier = app.id || app.name;
+        
+        // Check if the app already exists
+        const existingApp = await prisma.discoveredApp.findFirst({
           where: {
-            companyId_appId: {
-              companyId: integration.companyId,
-              appId: app.id || app.name,
-            },
-          },
-          update: {
-            lastSeen: new Date(),
-            installCount: { increment: 1 },
-            website: app.website,
-            description: app.description,
-            logoUrl: app.iconUrl,
-            scopes: app.scopes || [],
-          },
-          create: {
             companyId: integration.companyId,
-            name: app.name,
-            appId: app.id,
-            website: app.website,
-            description: app.description,
-            logoUrl: app.iconUrl,
-            source: 'GOOGLE_WORKSPACE',
-            scopes: app.scopes || [],
+            appId: appIdentifier,
           },
         });
+
+        if (existingApp) {
+          // Update existing app
+          await prisma.discoveredApp.update({
+            where: {
+              id: existingApp.id,
+            },
+            data: {
+              lastSeen: new Date(),
+              installCount: { increment: 1 },
+              website: app.website,
+              description: app.description,
+              logoUrl: app.iconUrl,
+              scopes: app.scopes || [],
+            },
+          });
+        } else {
+          // Create new app
+          await prisma.discoveredApp.create({
+            data: {
+              companyId: integration.companyId,
+              name: app.name,
+              appId: appIdentifier,
+              website: app.website,
+              description: app.description,
+              logoUrl: app.iconUrl,
+              source: 'GOOGLE_WORKSPACE',
+              scopes: app.scopes || [],
+            },
+          });
+        }
       }
 
       // Update last sync time

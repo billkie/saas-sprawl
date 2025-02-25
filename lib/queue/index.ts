@@ -1,4 +1,4 @@
-import { Queue, Worker, QueueScheduler } from 'bullmq';
+import { Queue, Worker, QueueEvents } from 'bullmq';
 import redis from '@/lib/redis';
 import { syncQuickBooks } from './processors/quickbooks';
 import { syncGoogleWorkspace } from './processors/google';
@@ -31,12 +31,12 @@ export const notificationQueue = new Queue(NOTIFICATION_QUEUE, {
   },
 });
 
-// Create queue schedulers (for delayed/recurring jobs)
-export const syncScheduler = new QueueScheduler(SYNC_QUEUE, {
+// Create queue events (for monitoring)
+export const syncQueueEvents = new QueueEvents(SYNC_QUEUE, {
   connection: redis,
 });
 
-export const notificationScheduler = new QueueScheduler(NOTIFICATION_QUEUE, {
+export const notificationQueueEvents = new QueueEvents(NOTIFICATION_QUEUE, {
   connection: redis,
 });
 
@@ -46,9 +46,9 @@ const syncWorker = new Worker(
   async (job) => {
     switch (job.name) {
       case 'syncQuickBooks':
-        return syncQuickBooks(job.data);
+        return syncQuickBooks();
       case 'syncGoogleWorkspace':
-        return syncGoogleWorkspace(job.data);
+        return syncGoogleWorkspace();
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }
@@ -61,7 +61,7 @@ const notificationWorker = new Worker(
   async (job) => {
     switch (job.name) {
       case 'checkRenewals':
-        return checkRenewals(job.data);
+        return checkRenewals();
       default:
         throw new Error(`Unknown job type: ${job.name}`);
     }
@@ -119,6 +119,6 @@ export async function closeQueues() {
   await notificationWorker.close();
   await syncQueue.close();
   await notificationQueue.close();
-  await syncScheduler.close();
-  await notificationScheduler.close();
+  await syncQueueEvents.close();
+  await notificationQueueEvents.close();
 } 

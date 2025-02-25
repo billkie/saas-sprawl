@@ -16,7 +16,7 @@ const config = {
 
 // Initialize Stripe with API version and type information
 const stripe = new Stripe(config.secretKey, {
-  apiVersion: '2023-10-16', // Lock to specific API version
+  apiVersion: '2025-01-27.acacia', // Lock to specific API version
   typescript: true,
 });
 

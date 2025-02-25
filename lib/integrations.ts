@@ -54,7 +54,7 @@ export async function getIntegrationStatus(userId: string): Promise<IntegrationS
 
   // Count discovered apps from Google Workspace
   const googleApps = company.subscriptions.filter(
-    sub => sub.discoveredApps.length > 0
+    sub => sub.discoveredApps && sub.discoveredApps.length > 0
   ).length;
 
   return {
