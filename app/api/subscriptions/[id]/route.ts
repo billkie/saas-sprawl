@@ -30,10 +30,16 @@ async function checkSubscriptionAccess(subscriptionId: string, userEmail: string
   return subscription;
 }
 
+type RouteContext = {
+  params: {
+    id: string;
+  };
+};
+
 // PUT /api/subscriptions/[id]
 export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   try {
     const session = await getSession();
@@ -41,16 +47,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const validatedData = subscriptionSchema.parse(body);
 
     const updatedSubscription = await prisma.subscription.update({
-      where: { id: context.params.id },
+      where: { id: params.id },
       data: validatedData,
     });
 
@@ -73,8 +79,8 @@ export async function PUT(
 
 // DELETE /api/subscriptions/[id]
 export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } }
+  req: NextRequest,
+  { params }: RouteContext
 ) {
   try {
     const session = await getSession();
@@ -82,13 +88,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscription = await checkSubscriptionAccess(context.params.id, session.user.email);
+    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
     if (!subscription) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
     }
 
     await prisma.subscription.delete({
-      where: { id: context.params.id },
+      where: { id: params.id },
     });
 
     return new NextResponse(null, { status: 204 });

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 
 // Subscription input validation schema
 const subscriptionSchema = z.object({
@@ -9,13 +10,18 @@ const subscriptionSchema = z.object({
   status: z.enum(['ACTIVE', 'CANCELED', 'PAST_DUE', 'TRIALING', 'EXPIRED']),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional(),
+  vendorName: z.string(),
+  monthlyAmount: z.number(),
+  paymentFrequency: z.enum(['MONTHLY', 'QUARTERLY', 'ANNUAL', 'UNKNOWN']),
+  autoRenewal: z.boolean().default(true),
+  notifyBefore: z.number().default(14),
 });
 
 // GET /api/subscriptions
-export const GET = withApiAuthRequired(async function GET(req) {
+export async function GET() {
   try {
-    const session = await getSession(req);
-    if (!session?.user) {
+    const session = await getSession();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -41,6 +47,14 @@ export const GET = withApiAuthRequired(async function GET(req) {
     const subscriptions = await prisma.subscription.findMany({
       where: { companyId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        discoveredApps: true,
+        _count: {
+          select: {
+            billingLogs: true
+          }
+        }
+      }
     });
 
     return NextResponse.json(subscriptions);
@@ -51,13 +65,13 @@ export const GET = withApiAuthRequired(async function GET(req) {
       { status: 500 }
     );
   }
-});
+}
 
 // POST /api/subscriptions
-export const POST = withApiAuthRequired(async function POST(req) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getSession(req);
-    if (!session?.user) {
+    const session = await getSession();
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -82,12 +96,32 @@ export const POST = withApiAuthRequired(async function POST(req) {
 
     const companyId = userWithCompany.companies[0].companyId;
 
-    // Create subscription
+    // Create subscription with proper Prisma input type
+    const subscriptionData: Prisma.SubscriptionCreateInput = {
+      planId: validatedData.planId,
+      status: validatedData.status,
+      startDate: new Date(validatedData.startDate),
+      ...(validatedData.endDate && { endDate: new Date(validatedData.endDate) }),
+      vendorName: validatedData.vendorName,
+      monthlyAmount: validatedData.monthlyAmount,
+      paymentFrequency: validatedData.paymentFrequency,
+      autoRenewal: validatedData.autoRenewal,
+      notifyBefore: validatedData.notifyBefore,
+      company: {
+        connect: { id: companyId }
+      }
+    };
+
     const subscription = await prisma.subscription.create({
-      data: {
-        ...validatedData,
-        companyId,
-      },
+      data: subscriptionData,
+      include: {
+        discoveredApps: true,
+        _count: {
+          select: {
+            billingLogs: true
+          }
+        }
+      }
     });
 
     return NextResponse.json(subscription, { status: 201 });
@@ -105,4 +139,4 @@ export const POST = withApiAuthRequired(async function POST(req) {
       { status: 500 }
     );
   }
-}); 
+} 

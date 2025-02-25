@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { getSubscriptions } from '@/lib/subscriptions';
 import { SubscriptionList } from '@/components/subscriptions/subscription-list';
 import { AddSubscriptionButton } from '@/components/subscriptions/add-subscription-button';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Subscriptions - Ziruna',
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
 export default async function SubscriptionsPage() {
   const session = await auth();
 
-  if (!session?.user) {
-    return null;
+  if (!session?.user?.id) {
+    redirect('/auth/signin');
   }
 
   const subscriptions = await getSubscriptions(session.user.id);

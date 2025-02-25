@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { getNotifications } from '@/lib/notifications';
 import { NotificationsList } from '@/components/notifications/notifications-list';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Notifications - Ziruna',
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
 export default async function NotificationsPage() {
   const session = await auth();
 
-  if (!session?.user) {
-    return null;
+  if (!session?.user?.id) {
+    redirect('/auth/signin');
   }
 
   const notifications = await getNotifications(session.user.id);

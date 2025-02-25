@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { getIntegrationStatus } from '@/lib/integrations';
 import { IntegrationCard } from '@/components/integrations/integration-card';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Integrations - Ziruna',
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
 export default async function IntegrationsPage() {
   const session = await auth();
 
-  if (!session?.user) {
-    return null;
+  if (!session?.user?.id) {
+    redirect('/auth/signin');
   }
 
   const status = await getIntegrationStatus(session.user.id);
