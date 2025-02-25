@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { GoogleWorkspaceClient } from '@/lib/clients/google';
-import { processDiscoveredApps } from '../route';
+import { processDiscoveredApps } from '@/lib/utils/google-integration';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;

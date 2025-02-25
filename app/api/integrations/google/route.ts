@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { GoogleWorkspaceClient } from '@/lib/clients/google';
+import { processDiscoveredApps } from '@/lib/utils/google-integration';
 
 interface App {
   id?: string;
@@ -37,43 +38,6 @@ async function getUserCompany(userEmail: string) {
   });
 
   return userWithCompany?.companies[0]?.company;
-}
-
-// Helper function to process discovered apps
-export async function processDiscoveredApps(apps: App[], companyId: string) {
-  let processedCount = 0;
-
-  for (const app of apps) {
-    // Update or create discovered app
-    await prisma.discoveredApp.upsert({
-      where: {
-        id: app.id || `${companyId}-${app.name}`,
-      },
-      update: {
-        lastSeen: new Date(),
-        installCount: { increment: 1 },
-        website: app.website,
-        description: app.description,
-        logoUrl: app.iconUrl,
-        scopes: app.scopes || [],
-      },
-      create: {
-        id: app.id || `${companyId}-${app.name}`,
-        companyId,
-        name: app.name,
-        appId: app.id || app.name,
-        website: app.website,
-        description: app.description,
-        logoUrl: app.iconUrl,
-        source: 'GOOGLE_WORKSPACE',
-        scopes: app.scopes || [],
-      },
-    });
-
-    processedCount++;
-  }
-
-  return processedCount;
 }
 
 // POST /api/integrations/google - Start OAuth flow
