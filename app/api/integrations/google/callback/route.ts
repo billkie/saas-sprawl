@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { GoogleWorkspaceClient } from '@/lib/clients/google';
+import { processDiscoveredApps } from '../route';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
@@ -31,7 +32,7 @@ async function getUserCompany(userEmail: string) {
 }
 
 // GET /api/integrations/google/callback - OAuth callback handler
-export const GET = withApiAuthRequired(async (request: Request) => {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -102,4 +103,4 @@ export const GET = withApiAuthRequired(async (request: Request) => {
 
     return NextResponse.redirect(redirectUrl.toString());
   }
-}); 
+} 

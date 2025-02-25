@@ -1,7 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { GoogleWorkspaceClient } from '@/lib/clients/google';
+
+interface App {
+  id?: string;
+  name: string;
+  website?: string;
+  description?: string;
+  iconUrl?: string;
+  scopes?: string[];
+}
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
@@ -31,17 +40,14 @@ async function getUserCompany(userEmail: string) {
 }
 
 // Helper function to process discovered apps
-async function processDiscoveredApps(apps: App[], companyId: string) {
+export async function processDiscoveredApps(apps: App[], companyId: string) {
   let processedCount = 0;
 
   for (const app of apps) {
     // Update or create discovered app
     await prisma.discoveredApp.upsert({
       where: {
-        companyId_appId: {
-          companyId,
-          appId: app.id || app.name, // Use name as ID if no app ID
-        },
+        id: app.id || `${companyId}-${app.name}`,
       },
       update: {
         lastSeen: new Date(),
@@ -52,9 +58,10 @@ async function processDiscoveredApps(apps: App[], companyId: string) {
         scopes: app.scopes || [],
       },
       create: {
+        id: app.id || `${companyId}-${app.name}`,
         companyId,
         name: app.name,
-        appId: app.id,
+        appId: app.id || app.name,
         website: app.website,
         description: app.description,
         logoUrl: app.iconUrl,
@@ -70,7 +77,7 @@ async function processDiscoveredApps(apps: App[], companyId: string) {
 }
 
 // POST /api/integrations/google - Start OAuth flow
-export const POST = withApiAuthRequired(async (request: Request) => {
+export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -86,10 +93,10 @@ export const POST = withApiAuthRequired(async (request: Request) => {
       { status: 500 }
     );
   }
-});
+}
 
 // GET /api/integrations/google/sync - Manual sync
-export const GET = withApiAuthRequired(async (request: Request) => {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -171,4 +178,4 @@ export const GET = withApiAuthRequired(async (request: Request) => {
       { status: 500 }
     );
   }
-}); 
+} 
