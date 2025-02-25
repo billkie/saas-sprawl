@@ -2,138 +2,136 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 const routes = {
-  home: '/' as const,
-  pricing: '/pricing' as const,
-  docs: '/docs' as const,
-  login: '/api/auth/login' as const,
+  home: '/',
+  pricing: '/pricing',
+  docs: '/docs',
+  login: '/api/auth/login',
 } as const;
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href={routes.home} className="flex items-center space-x-2">
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Ziruna
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              href={routes.pricing}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Pricing
-            </Link>
-            <Link
-              href={routes.docs}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Documentation
-            </Link>
+    <div className="relative min-h-screen bg-background">
+      {/* Background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background to-background/80" />
+      
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="py-6 border-b border-border">
+          <nav className="flex items-center justify-between">
+            <div className="flex items-center space-x-8">
+              <Link href={routes.home} className="text-2xl font-bold text-foreground">
+                Ziruna
+              </Link>
+              <Link href={routes.pricing} className="text-muted-foreground hover:text-foreground transition-colors">
+                Pricing
+              </Link>
+              <Link href={routes.docs} className="text-muted-foreground hover:text-foreground transition-colors">
+                Documentation
+              </Link>
+            </div>
             <Link href={routes.login}>
-              <Button variant="default">Get Started</Button>
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                Get Started
+              </Button>
             </Link>
           </nav>
-        </div>
-      </header>
+        </header>
 
-      <main className="flex-1">
-        <section className="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
-          <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
-            <h1 className="font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        {/* Hero Section */}
+        <main className="py-20">
+          {/* New Feature Banner */}
+          <div className="mb-12 text-center">
+            <Link 
+              href={routes.pricing} 
+              className="inline-flex items-center px-4 py-2 rounded-full bg-accent text-accent-foreground hover:bg-accent/90 transition-colors"
+            >
+              🚀 New: Automatic SaaS Discovery
+            </Link>
+          </div>
+
+          {/* Main Hero */}
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground tracking-tight">
               Discover and manage your SaaS spend
             </h1>
-            <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
+            <p className="text-xl text-muted-foreground">
               Automatically discover and track your organization's SaaS subscriptions.
               Get insights into usage, costs, and renewals.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
               <Link href={routes.login}>
-                <Button size="lg" className="w-full sm:w-auto">
+                <Button 
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-8"
+                >
                   Get Started
                 </Button>
               </Link>
               <Link href={routes.pricing}>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="border-primary text-primary hover:bg-accent h-12 px-8"
+                >
                   View Pricing
                 </Button>
               </Link>
             </div>
           </div>
-        </section>
 
-        <section className="container py-16 md:py-24">
-          <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
-            <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-5xl">
-              Features
-            </h2>
-            <p className="max-w-[85%] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-              Everything you need to manage your SaaS subscriptions in one place.
-            </p>
-          </div>
-          <div className="mx-auto grid justify-center gap-6 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-3 mt-12">
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <div className="space-y-2">
-                  <h3 className="font-bold text-xl">Automatic Discovery</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically discover SaaS apps through Google Workspace and accounting integrations.
-                  </p>
-                </div>
-              </div>
+          {/* Features Section */}
+          <section className="py-24">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-foreground mb-4">Features</h2>
+              <p className="text-xl text-muted-foreground">
+                Everything you need to manage your SaaS subscriptions in one place.
+              </p>
             </div>
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <div className="space-y-2">
-                  <h3 className="font-bold text-xl">Renewal Tracking</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Never miss a renewal with automated notifications and calendar integration.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
-              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
-                <div className="space-y-2">
-                  <h3 className="font-bold text-xl">Spend Analytics</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Get insights into your SaaS spend with detailed analytics and reporting.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
 
-      <footer className="border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-          <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-            <p className="text-center text-sm text-muted-foreground md:text-left">
-              Built by{' '}
-              <a
-                href="https://ziruna.com"
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium underline underline-offset-4 hover:text-primary"
-              >
-                Ziruna
-              </a>
-              . The source code is available on{' '}
-              <a
-                href="https://github.com/ziruna/saas-sprawl"
-                target="_blank"
-                rel="noreferrer"
-                className="font-medium underline underline-offset-4 hover:text-primary"
-              >
-                GitHub
-              </a>
-              .
-            </p>
-          </div>
-        </div>
-      </footer>
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {[
+                {
+                  title: "Automatic Discovery",
+                  description: "Automatically discover SaaS apps through Google Workspace and accounting integrations."
+                },
+                {
+                  title: "Renewal Tracking",
+                  description: "Never miss a renewal with automated notifications and calendar integration."
+                },
+                {
+                  title: "Spend Analytics",
+                  description: "Get insights into your SaaS spend with detailed analytics and reporting."
+                }
+              ].map((feature, i) => (
+                <div 
+                  key={i}
+                  className="group relative overflow-hidden rounded-lg border bg-card p-8 transition-colors hover:border-primary"
+                >
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-card-foreground">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-12 border-t border-border">
+          <p className="text-center text-muted-foreground">
+            Built by{' '}
+            <a href="https://ziruna.com" className="text-primary hover:text-primary/90">
+              Ziruna
+            </a>
+            . The source code is available on{' '}
+            <a href="https://github.com/ziruna/saas-sprawl" className="text-primary hover:text-primary/90">
+              GitHub
+            </a>
+            .
+          </p>
+        </footer>
+      </div>
     </div>
   );
 } 
