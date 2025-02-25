@@ -37,8 +37,8 @@ yarn-error.log*
 next-env.d.ts
 
 # IDE
-.idea
-.vscode
+.idea/
+.vscode/
 
 # Stripe CLI config
 .stripe/config.toml
@@ -48,6 +48,5 @@ next-env.d.ts
 *.dev
 *.development
 
-# IDE
-.idea
-.vscode 
+# SSL certificates
+/certs 
