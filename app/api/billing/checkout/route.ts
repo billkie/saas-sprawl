@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0';
 import prisma from '@/lib/prisma';
 import { stripe } from '@/lib/stripe';
 import { PRICING_TIERS, SubscriptionTier } from '@/lib/config/pricing';
 
-export const POST = withApiAuthRequired(async function POST(
-  req: NextRequest
-) {
+// Remove withApiAuthRequired and handle auth manually since it doesn't work well with App Router
+export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     if (!session?.user) {
@@ -28,17 +27,23 @@ export const POST = withApiAuthRequired(async function POST(
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { companies: true },
+      include: {
+        companies: {
+          include: {
+            company: true
+          }
+        }
+      },
     });
 
-    if (!user?.companies[0]) {
+    if (!user?.companies[0]?.company) {
       return NextResponse.json(
         { error: 'No company found for user' },
         { status: 404 }
       );
     }
 
-    const company = user.companies[0];
+    const company = user.companies[0].company;
     
     // Create or retrieve Stripe customer
     let customerId = company.stripeCustomerId;
@@ -84,4 +89,4 @@ export const POST = withApiAuthRequired(async function POST(
       { status: 500 }
     );
   }
-}); 
+} 
