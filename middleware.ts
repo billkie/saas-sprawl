@@ -7,8 +7,5 @@ export const middleware = withMiddlewareAuthRequired();
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/api/subscriptions/:path*',
-    '/api/integrations/:path*',
-    '/api/billing/:path*',
   ],
 }; 

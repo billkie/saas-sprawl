@@ -30,7 +30,31 @@ async function checkSubscriptionAccess(subscriptionId: string, userEmail: string
   return subscription;
 }
 
-// PUT /api/subscriptions/[id]
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const subscription = await checkSubscriptionAccess(params.id, session.user.email);
+    if (!subscription) {
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(subscription);
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -71,7 +95,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/subscriptions/[id]
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
