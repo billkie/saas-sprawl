@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0/edge';
 import prisma from '@/lib/prisma';
 import { QuickBooksClient, Transaction } from '@/lib/clients/quickbooks';
 import { analyzeTransactions, PaymentFrequency } from '@/lib/utils/transaction-analysis';
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const authUri = quickbooksClient.getAuthorizationUrl(session.user.email);
+    const authUri = await quickbooksClient.getAuthorizationUrl(session.user.email);
     return NextResponse.json({ authUri });
   } catch (error) {
     console.error('Error initiating QuickBooks OAuth:', error);

@@ -1,4 +1,4 @@
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0/edge';
 import prisma from '@/lib/prisma';
 
 export interface User {

@@ -1,4 +1,4 @@
-import { handleAuth } from '@auth0/nextjs-auth0';
+import { handleAuth } from '@auth0/nextjs-auth0/edge';
 
 // Create the base handler with async params support
 const auth0Handler = handleAuth({

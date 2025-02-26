@@ -40,9 +40,9 @@
     - Use only for Web API access in small components.
     - Avoid for data fetching or state management.
   
-  Source Control
-  - Stage and commit all changes.
-  - Write clear commit messages.
+  Documentation
+  - ALWAYS refer to the docs/PRD.md, docs/Architecture.md, docs/DevelopmentGuide.md, docs/APIReference.md for the latest information on the framework you are using.
+  - ALWAYS update docs/CHANGELOG.md at the end of each session with the changes you made, BEFORE you run any build commands.
   
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
   

@@ -1,4 +1,4 @@
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0/edge';
 
 interface FetchOptions extends RequestInit {
   data?: any;

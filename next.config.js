@@ -15,6 +15,13 @@ const nextConfig = {
       ? 'https://ziruna.com' 
       : 'https://dev.ziruna.com',
   },
+  // Configure Auth0 to be processed correctly during build
+  transpilePackages: ['@auth0/nextjs-auth0'],
 }
 
-module.exports = nextConfig 
+// Allow Auth0 to be properly processed during build time
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+module.exports = withBundleAnalyzer(nextConfig) 

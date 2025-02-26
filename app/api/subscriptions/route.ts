@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@auth0/nextjs-auth0';
+import { getSession } from '@auth0/nextjs-auth0/edge';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import type { Prisma } from '@prisma/client';

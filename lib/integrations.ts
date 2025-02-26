@@ -28,6 +28,9 @@ export async function getIntegrationStatus(userId: string): Promise<IntegrationS
               quickbooksIntegration: true,
               googleWorkspaceIntegration: true,
               subscriptions: {
+                include: {
+                  discoveredApps: true,
+                },
                 where: {
                   OR: [
                     { quickbooksVendorId: { not: null } },
