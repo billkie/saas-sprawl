@@ -19,7 +19,7 @@ export interface SubscriptionDetails {
 
 const PLAN_LIMITS = {
   BASIC: {
-    subscriptions: 5,
+    subscriptions: 20,
     features: {
       multiUser: false,
       customIntegrations: false,
@@ -27,7 +27,7 @@ const PLAN_LIMITS = {
     },
   },
   GROWTH: {
-    subscriptions: 50,
+    subscriptions: 100,
     features: {
       multiUser: true,
       customIntegrations: false,

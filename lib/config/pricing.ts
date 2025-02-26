@@ -23,7 +23,7 @@ export const PRICING_TIERS: Record<SubscriptionTier, PricingTier> = {
     price: 29,
     appLimit: 20,
     stripePriceId: {
-      test: 'prod_RplwWtraFEKoeU', // You'll add these after creating products in Stripe
+      test: 'prod_RqUiV4ZDUc1131', // You'll add these after creating products in Stripe
       live: '',
     },
     features: [
@@ -39,7 +39,7 @@ export const PRICING_TIERS: Record<SubscriptionTier, PricingTier> = {
     price: 99,
     appLimit: 100,
     stripePriceId: {
-      test: 'prod_RplwkpVBZNlR5N',
+      test: 'prod_RqUjZlaJ4emygv',
       live: '',
     },
     features: [
@@ -57,7 +57,7 @@ export const PRICING_TIERS: Record<SubscriptionTier, PricingTier> = {
     price: 1000,
     appLimit: -1, // -1 indicates unlimited
     stripePriceId: {
-      test: 'prod_RplxWvnjNCn8QN',
+      test: 'prod_RqUjZDUPEzwjfC',
       live: '',
     },
     features: [
