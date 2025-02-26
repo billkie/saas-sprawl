@@ -1,10 +1,10 @@
-# Ziruna - Technical Architecture
+# Quacco - Technical Architecture
 
 ## System Architecture
 
 ### 1. Overview
 
-Ziruna is built using a modern, scalable web architecture following best practices for security, performance, and maintainability. This document outlines the technical architecture of the platform.
+Quacco is built using a modern, scalable web architecture following best practices for security, performance, and maintainability. This document outlines the technical architecture of the platform.
 
 ### 2. Technology Stack
 

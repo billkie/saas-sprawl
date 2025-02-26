@@ -44,7 +44,7 @@ export function TopNav({ user }: TopNavProps) {
     <div className="border-b">
       <div className="flex h-16 items-center px-4">
         <Link href={'/dashboard' as Route} className="font-bold">
-          Ziruna
+          Quacco
         </Link>
         <div className="ml-auto flex items-center space-x-4">
           <DropdownMenu>

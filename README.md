@@ -1,8 +1,8 @@
-# Ziruna - SaaS Spend Management Platform
+# Quacco - SaaS Spend Management Platform
 
-![Ziruna Logo](./public/logo.svg)
+![Quacco Logo](./public/logo.svg)
 
-Ziruna is a modern SaaS Spend Management and Discovery Platform that helps organizations discover, track, and optimize their SaaS subscriptions.
+Quacco is a modern SaaS Spend Management and Discovery Platform that helps organizations discover, track, and optimize their SaaS subscriptions.
 
 ## 🚀 Features
 
@@ -59,7 +59,7 @@ Ziruna is a modern SaaS Spend Management and Discovery Platform that helps organ
 
 ## 🏗️ Architecture
 
-Ziruna is built with a modern tech stack:
+Quacco is built with a modern tech stack:
 
 - **Frontend**: Next.js, React, Tailwind CSS, Shadcn UI
 - **Backend**: Next.js API Routes, Prisma ORM
@@ -155,4 +155,4 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ## 📞 Contact
 
-For support or inquiries, please contact us at support@ziruna.com. 
+For support or inquiries, please contact us at support@quacco.com. 

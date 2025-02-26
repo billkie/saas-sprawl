@@ -77,7 +77,7 @@ export default function Home() {
           <nav className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <Link href={routes.home} className="text-2xl font-bold text-foreground">
-                Ziruna
+                Quacco
               </Link>
               <Link href={routes.pricing} className="text-muted-foreground hover:text-foreground transition-colors">
                 Pricing
@@ -175,8 +175,8 @@ export default function Home() {
           <div className="text-center text-muted-foreground">
             <p>
               Built by{' '}
-              <a href="https://ziruna.com" className="text-primary hover:text-primary/90">
-                Ziruna
+              <a href="https://quacco.com" className="text-primary hover:text-primary/90">
+                Quacco
               </a>
             </p>
             <div className="mt-4 space-x-4">

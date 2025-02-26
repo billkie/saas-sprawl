@@ -1,11 +1,11 @@
-# Ziruna - SaaS Spend Management Platform
+# Quacco - SaaS Spend Management Platform
 
 ## Product Requirements Document
 
 ### 1. Introduction
 
 #### 1.1 Purpose
-Ziruna is a SaaS Spend Management and Discovery Platform designed to help organizations discover, track, and optimize their SaaS subscriptions. This document outlines the functional requirements and specifications for the platform.
+Quacco is a SaaS Spend Management and Discovery Platform designed to help organizations discover, track, and optimize their SaaS subscriptions. This document outlines the functional requirements and specifications for the platform.
 
 #### 1.2 Scope
 The platform will provide tools for SaaS subscription discovery, management, and cost optimization, along with integrations with third-party platforms for automated discovery.

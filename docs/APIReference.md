@@ -1,6 +1,6 @@
-# Ziruna API Reference
+# Quacco API Reference
 
-This document outlines the API endpoints available in the Ziruna platform, their request and response formats, and authentication requirements.
+This document outlines the API endpoints available in the Quacco platform, their request and response formats, and authentication requirements.
 
 ## Authentication
 

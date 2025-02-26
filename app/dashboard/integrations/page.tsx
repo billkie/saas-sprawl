@@ -5,8 +5,8 @@ import { IntegrationCard } from '@/components/integrations/integration-card';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Integrations - Ziruna',
-  description: 'Manage your integrations',
+  title: 'Integrations - Quacco',
+  description: 'Connect your existing services',
 };
 
 export default async function IntegrationsPage() {

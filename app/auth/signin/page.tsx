@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import type { Route } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sign In - Ziruna',
-  description: 'Sign in to your Ziruna account',
+  title: 'Sign In - Quacco',
+  description: 'Sign in to your Quacco account',
 };
 
 export default function SignInPage() {
@@ -15,13 +15,13 @@ export default function SignInPage() {
         <div className="absolute inset-0 bg-zinc-900" />
         <div className="relative z-20 flex items-center text-lg font-medium">
           <Link href={'/' as Route} className="hover:text-gray-200">
-            Ziruna
+            Quacco
           </Link>
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              &ldquo;Ziruna has helped us save thousands on unused SaaS subscriptions and better manage our software spend.&rdquo;
+              &ldquo;Quacco has helped us save thousands on unused SaaS subscriptions and better manage our software spend.&rdquo;
             </p>
             <footer className="text-sm">Sofia Davis, CTO</footer>
           </blockquote>

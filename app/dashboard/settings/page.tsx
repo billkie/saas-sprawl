@@ -8,8 +8,8 @@ import { getSubscriptionDetails } from '@/lib/billing';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Settings - Ziruna',
-  description: 'Manage your account settings and subscription',
+  title: 'Settings - Quacco',
+  description: 'Configure your account and subscription',
 };
 
 export default async function SettingsPage() {

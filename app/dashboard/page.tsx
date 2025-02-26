@@ -7,8 +7,8 @@ import { CreditCard, Package, Bell } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Dashboard - Ziruna',
-  description: 'Manage your SaaS subscriptions and spend',
+  title: 'Dashboard - Quacco',
+  description: 'View your SaaS spend overview',
 };
 
 function formatCurrency(amount: number, currency: string) {

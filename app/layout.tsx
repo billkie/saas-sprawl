@@ -3,12 +3,13 @@ import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
+import { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'Ziruna - SaaS Spend Management',
-  description: 'Discover, track, and optimize your SaaS spend across your organization.',
+export const metadata: Metadata = {
+  title: 'Quacco - SaaS Spend Management',
+  description: 'Track and optimize your SaaS subscriptions',
 };
 
 export default async function RootLayout({

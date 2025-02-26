@@ -1,6 +1,6 @@
-# Ziruna SaaS Spend Management Platform - TODOs
+# Quacco SaaS Spend Management Platform - TODOs
 
-This document tracks the pending tasks and features that need to be implemented for the Ziruna platform.
+This document tracks the pending tasks and features that need to be implemented for the Quacco platform.
 
 ## User Management & Authentication
 

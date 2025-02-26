@@ -1,8 +1,8 @@
-# Ziruna Development Guide
+# Quacco Development Guide
 
 ## Getting Started
 
-This guide provides instructions for setting up the Ziruna development environment, understanding the code organization, and following best practices for development.
+This guide provides instructions for setting up the Quacco development environment, understanding the code organization, and following best practices for development.
 
 ### Prerequisites
 

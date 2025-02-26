@@ -1,7 +1,7 @@
 {
-  "name": "ziruna",
+  "name": "quacco",
   "version": "0.1.0",
-  "description": "Ziruna - SaaS Spend Management and Discovery Platform",
+  "description": "Quacco - SaaS Spend Management and Discovery Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",

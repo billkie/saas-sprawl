@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'dev.ziruna.com:3000'],
+      allowedOrigins: ['localhost:3000', 'dev.quacco.com', 'www.quacco.com'],
     },
     typedRoutes: true,
   },
@@ -12,8 +12,8 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.VERCEL_ENV === 'production' 
-      ? 'https://ziruna.com' 
-      : 'https://dev.ziruna.com',
+      ? 'https://www.quacco.com' 
+      : 'https://dev.quacco.com',
   },
   // Configure Auth0 to be processed correctly during build
   transpilePackages: ['@auth0/nextjs-auth0'],

@@ -1,6 +1,6 @@
-# Contributing to Ziruna
+# Contributing to Quacco
 
-Thank you for your interest in contributing to the Ziruna SaaS Spend Management Platform! This document provides guidelines and instructions for contributing to this project.
+Thank you for your interest in contributing to the Quacco SaaS Spend Management Platform! This document provides guidelines and instructions for contributing to this project.
 
 ## Code of Conduct
 
@@ -129,4 +129,4 @@ All submissions require review. We use GitHub pull requests for this purpose.
 
 ## License
 
-By contributing to Ziruna, you agree that your contributions will be licensed under the same license as the project. 
+By contributing to Quacco, you agree that your contributions will be licensed under the same license as the project. 

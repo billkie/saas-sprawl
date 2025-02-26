@@ -5,8 +5,8 @@ import { NotificationsList } from '@/components/notifications/notifications-list
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Notifications - Ziruna',
-  description: 'View and manage your notifications',
+  title: 'Notifications - Quacco',
+  description: 'Manage your notification settings',
 };
 
 export default async function NotificationsPage() {

@@ -6,7 +6,7 @@ import { AddSubscriptionButton } from '@/components/subscriptions/add-subscripti
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Subscriptions - Ziruna',
+  title: 'Subscriptions - Quacco',
   description: 'Manage your SaaS subscriptions',
 };
 
