@@ -15,13 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `APIReference.md`: Detailed API documentation with endpoints and examples
   - `CHANGELOG.md`: This changelog file
   - `TODO.md`: Detailed task list with checkboxes for project implementation
+- Complete Auth0 authentication flow with company onboarding:
+  - Added dedicated signup page that redirects to Auth0 with signup hint
+  - Created company information collection during onboarding
+  - Implemented company creation in database during signup process
+  - Updated API endpoints to handle Auth0 authentication correctly
+  - Added direct login/signup routes with custom Auth0 authorization URLs
+  - Implemented proper error handling for authentication flow
 
 ### Changed
 - Moved `TODO.md` from root directory to `docs/` folder to keep all documentation files in one place
+- Updated Auth0 integration to use version 3.5.0 for better compatibility with Next.js App Router
+- Improved user onboarding flow to include company information collection
+- Updated environment variables to use the correct domain (quacco.com)
+- Simplified Auth0 route handlers to avoid TypeScript errors with custom handlers
+- Changed login/signup flow to use direct custom routes instead of Auth0 handlers
 
 ### Fixed
 - Auth0 session dynamic rendering errors:
   - Added `dynamic = 'force-dynamic'` configuration to dashboard routes
+  - Added `dynamic = 'force-dynamic'` configuration to onboarding page to fix cookie usage error
   - Fixed "Route couldn't be rendered statically because it used `cookies`" build warnings
   - Properly configured Next.js to handle Auth0 authentication in dynamic routes
   - Enhanced middleware configuration with `unstable_allowDynamic` for Auth0 packages
@@ -37,6 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented lazy loading of OAuthClient to prevent build-time errors
   - Added fallback mock implementation for build process
   - Updated route handlers to use the new async authorization methods
+- Fixed Auth0 login/signup flow:
+  - Updated company-signup route to use the correct Auth0 SDK parameters
+  - Fixed blank sign-in and sign-up pages by properly configuring Auth0 redirects
+  - Fixed TypeScript errors in Auth0 handler parameters
+  - Properly configured environment variables for Auth0 integration
+  - Resolved build errors related to incompatible Auth0 handler options
+  - Implemented custom login/signup routes with proper state parameter serialization
+  - Added error handling to authentication routes for better user experience
 
 ## [0.1.0] - 2024-06-01
 
