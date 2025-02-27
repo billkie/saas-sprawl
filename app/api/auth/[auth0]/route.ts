@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { LoginOptions, LogoutOptions } from '@auth0/nextjs-auth0';
+import prisma from '@/lib/prisma';
 
 // Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
@@ -77,6 +78,48 @@ function getValidatedEnvVars(req: Request) {
   };
 }
 
+// Setup database hooks for Auth0 users
+async function setupUserInDb() {
+  // This function is called after authentication to set up users in our database
+  const { getSession } = await import('@auth0/nextjs-auth0');
+  const session = await getSession();
+  
+  if (!session?.user?.email) {
+    console.log('No user in session, skipping database setup');
+    return false;
+  }
+  
+  try {
+    // Find or create user in the database
+    const user = await prisma.user.upsert({
+      where: { 
+        email: session.user.email 
+      },
+      update: {
+        name: session.user.name,
+        image: session.user.picture,
+      },
+      create: {
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.picture,
+      },
+      include: {
+        companies: true
+      }
+    });
+    
+    const isNewUser = user.id && !user.createdAt;
+    const needsOnboarding = isNewUser || user.companies.length === 0;
+    
+    console.log(`User ${user.email} setup complete. Needs onboarding: ${needsOnboarding}`);
+    return needsOnboarding;
+  } catch (error) {
+    console.error('Error setting up user in database:', error);
+    return false;
+  }
+}
+
 /**
  * Creates an Auth0 handler with detailed error reporting
  */
@@ -86,12 +129,11 @@ async function getSafeAuthHandler(operation: string, req: Request) {
     const envVars = getValidatedEnvVars(req);
     console.log(`Auth0 ${operation} handler initialized with base URL: ${envVars.auth0BaseUrl}`);
     
-    // Simplified approach: Use handleAuth without any custom handlers
-    // This is the most reliable pattern for Next.js App Router
+    // Import Auth0 handler with dynamic import
     const { handleAuth } = await import('@auth0/nextjs-auth0');
     
-    // IMPORTANT: Use the simplest form - when we provide custom handlers,
-    // Next.js App Router has issues with the parameters
+    // For all routes, use the standard handleAuth without custom handlers
+    // This is the most reliable pattern for Next.js App Router
     return handleAuth();
   } catch (error) {
     // Log detailed error information
@@ -141,20 +183,24 @@ export async function GET(
     const params = await context.params;
     console.log(`Auth0 GET request for: ${params.auth0}`, { url: req.url });
     
-    // Special handling for signup route
+    // Special handling for signup route - redirect to login with screen_hint=signup
     if (params.auth0 === 'signup') {
-      console.log('Processing signup request through direct method...');
+      console.log('Processing signup request through login with screen_hint...');
       
       // For signup, we redirect to the login endpoint with screen_hint=signup
       const loginUrl = new URL(`${req.url.split('/signup')[0]}/login`);
       loginUrl.searchParams.set('screen_hint', 'signup');
-      loginUrl.searchParams.set('returnTo', '/onboarding');
       
       return NextResponse.redirect(loginUrl);
     }
     
+    // For callback route, we'll handle user creation/checks after Auth0 processing
+    if (params.auth0 === 'callback') {
+      console.log('Processing callback request...');
+    }
+    
     // Get the appropriate handler and process the request
-    const handler = await getSafeAuthHandler('GET', req);
+    const handler = await getSafeAuthHandler(params.auth0, req);
     // CRITICAL FIX: Add 'return' before await per StackOverflow solution
     return await handler(req);
   } catch (error) {
@@ -185,7 +231,7 @@ export async function POST(
     console.log(`Auth0 POST request for: ${params.auth0}`, { url: req.url });
     
     // Get the appropriate handler and process the request
-    const handler = await getSafeAuthHandler('POST', req);
+    const handler = await getSafeAuthHandler(params.auth0, req);
     // CRITICAL FIX: Add 'return' before await per StackOverflow solution
     return await handler(req);
   } catch (error) {
@@ -206,12 +252,6 @@ export async function POST(
  * This handles all Auth0 routes:
  * /api/auth/login - Auth0 login with redirects
  * /api/auth/signup - Auth0 signup with screen_hint=signup (handled by redirecting to login)
- * /api/auth/callback - Callback URL from Auth0
+ * /api/auth/callback - Callback URL from Auth0 with simple user processing
  * /api/auth/logout - Auth0 logout
- */
-
-// This handles all Auth0 routes:
-// /api/auth/login - Auth0 login with redirects
-// /api/auth/logout - Auth0 logout
-// /api/auth/callback - Callback URL from Auth0
-// /api/auth/me - User profile information 
+ */ 

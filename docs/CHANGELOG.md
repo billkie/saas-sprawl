@@ -43,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated environment variables to use the correct domain (quacco.com)
 - Simplified Auth0 route handlers to avoid TypeScript errors with custom handlers
 - Refactored authentication flow to use client components with proper Auth0 SDK integration
+- Implemented unified Auth0 login/signup approach:
+  - Created a single endpoint for both login and signup
+  - Uses Auth0's built-in screen_hint parameter to toggle between modes
+  - Simplified client-side AuthButton component to work with both flows
+  - Added intelligent user detection in callback to route new users to onboarding
 
 ### Fixed
 - Auth0 session dynamic rendering errors:
@@ -193,6 +198,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced request parameter handling with URLSearchParams for better clarity
   - Added detailed logging throughout the authentication flow
   - Fixed mismatched handling of Auth0 request contexts that was causing the destructuring error
+- Implemented unified login/signup approach for Auth0:
+  - Created a robust and simplified authentication flow for both login and signup
+  - Enhanced Auth0 callback handler to automatically detect new users and redirect them to onboarding
+  - Added user creation/update in the database during callback processing
+  - Implemented intelligent routing to send returning users to the dashboard
+  - Removed redundant fallback logic in favor of a cleaner, more reliable approach
+  - Fixed all TypeScript errors and parameter typing issues
+  - Added comprehensive error handling and logging throughout the authentication flow
+  - Ensured compatibility with Auth0's recommended patterns for Next.js App Router
+  - Simplified client-side AuthButton to work with the unified approach
+  - Removed the need for separate returnTo parameters for different authentication flows
 
 ## [0.1.0] - 2024-06-01
 

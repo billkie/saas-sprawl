@@ -9,12 +9,21 @@ import { toast } from '@/components/ui/use-toast';
 interface AuthButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
   isSignUp?: boolean;
+  text?: string;
 }
 
-export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButtonProps) {
+export function AuthButton({ 
+  variant = 'outline', 
+  isSignUp = false, 
+  text 
+}: AuthButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [fallbackMode, setFallbackMode] = useState(false);
+  
+  // Determine the button text based on mode and custom text
+  const buttonText = text || (isSignUp ? 'Sign up with Google' : 'Continue with Google');
+  const loadingText = isSignUp ? 'Redirecting to signup...' : 'Redirecting to login...';
   
   // Check if the standard Auth0 endpoints are working
   useEffect(() => {
@@ -84,45 +93,8 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
     try {
       setIsLoading(true);
       
-      // FALLBACK APPROACH 1: Try our direct auth endpoints first
-      // These are designed to work around environment variable problems
-      if (fallbackMode) {
-        try {
-          const directEndpoint = isSignUp 
-            ? `/api/auth/direct-signup` 
-            : `/api/auth/direct-login`;
-          
-          // Add cache busting parameter
-          const directUrl = `${directEndpoint}?t=${Date.now()}`;
-          
-          console.log(`Using direct auth endpoint: ${directUrl}`);
-          window.location.href = directUrl;
-          return; // Wait for redirect
-        } catch (directError) {
-          console.error('Direct auth endpoint failed:', directError);
-          // Continue to next fallback
-        }
-      }
-      
-      // FALLBACK APPROACH 2: Try to construct Auth0 URL directly
-      if (fallbackMode) {
-        try {
-          // Use direct Auth0 URL construction as fallback
-          const constructedUrl = await getDirectAuth0Url(isSignUp ? 'signup' : undefined);
-          if (constructedUrl) {
-            console.log(`Using constructed Auth0 URL: ${constructedUrl}`);
-            window.location.href = constructedUrl;
-            return; // Wait for redirect
-          }
-        } catch (fallbackError) {
-          console.error('Constructed Auth0 URL failed:', fallbackError);
-          // Continue to standard approach as last resort
-        }
-      }
-      
-      // STANDARD APPROACH: Use the SDK-based Auth0 endpoint
-      // For signup, always use the login endpoint with screen_hint=signup
-      // This matches the route handling in our API
+      // Always use the login endpoint for both login and signup
+      // For signup, we add the screen_hint parameter
       let endpoint = '/api/auth/login';
       const params = new URLSearchParams();
       
@@ -133,14 +105,14 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
       if (isSignUp) {
         console.log('Using signup flow with screen_hint=signup');
         params.append('screen_hint', 'signup');
-        params.append('returnTo', '/onboarding');
-      } else {
-        // For login, return to dashboard
-        params.append('returnTo', '/dashboard');
+        
+        // You don't need to set returnTo here as we'll detect new users
+        // during callback and redirect to onboarding automatically
       }
       
+      // Construct the final URL
       const url = `${endpoint}?${params.toString()}`;
-      console.log(`Using standard Auth0 endpoint: ${url}`);
+      console.log(`Using Auth0 login endpoint: ${url}`);
       
       // Navigate to the auth endpoint
       window.location.href = url;
@@ -168,7 +140,7 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {isSignUp ? 'Redirecting to signup...' : 'Redirecting to login...'}
+          {loadingText}
         </>
       ) : (
         <>
@@ -187,7 +159,7 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
               d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
             ></path>
           </svg>
-          {isSignUp ? 'Sign up with Google' : 'Continue with Google'}
+          {buttonText}
         </>
       )}
     </Button>
