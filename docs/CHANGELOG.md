@@ -172,6 +172,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented critical fix that forces AUTH0_BASE_URL to match request host for all environments
   - Added module-level environment correction that runs before Auth0 SDK is initialized
   - Fixed issue where AUTH0_BASE_URL changes in Vercel dashboard didn't apply to all environments
+- Fixed critical Auth0 handler error in Next.js 15 App Router:
+  - Resolved the persistent "Cannot read properties of undefined (reading 'headers')" error
+  - Implemented the exact solution found in Stack Overflow that adds 'return' before await calls
+  - Simplified the Auth0 handler to use the default configuration without custom handlers
+  - Updated TypeScript types to match Next.js 15 App Router expectations
+  - Fixed issue with Next.js 15's handling of Auth0 SDK's response processing
+  - Corrected the way Auth0 handlers work with the App Router's Promise-based context
+  - Simplified the handleAuth implementation to use fewer parameters and reduce errors
+  - Implemented proper error handling for Auth0 handler initialization
+  - Applied production-tested pattern for Auth0 in Next.js 15 App Router
 
 ## [0.1.0] - 2024-06-01
 

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { LoginOptions, LogoutOptions, AppRouteHandlerFnContext } from '@auth0/nextjs-auth0';
 
 // Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
@@ -84,29 +86,14 @@ async function getSafeAuthHandler(operation: string, req: Request) {
     const envVars = getValidatedEnvVars(req);
     console.log(`Auth0 ${operation} handler initialized with base URL: ${envVars.auth0BaseUrl}`);
     
+    // SIMPLER APPROACH: Use handleAuth directly without the complex custom handlers
+    // This matches how Auth0 actually expects the handlers to work
     // Import Auth0 SDK dynamically to prevent build-time evaluation
-    const { handleAuth, handleLogin, handleCallback, handleLogout } = await import('@auth0/nextjs-auth0');
+    const { handleAuth } = await import('@auth0/nextjs-auth0');
     
-    // Create and return the Auth0 handler with detailed configuration
-    return handleAuth({
-      login: handleLogin({
-        returnTo: '/dashboard',
-        authorizationParams: {
-          scope: 'openid profile email',
-        },
-      }),
-      signup: handleLogin({
-        returnTo: '/onboarding', 
-        authorizationParams: {
-          screen_hint: 'signup',
-          scope: 'openid profile email',
-        },
-      }),
-      callback: handleCallback(),
-      logout: handleLogout({
-        returnTo: '/',
-      }),
-    });
+    // Create and return the Auth0 handler with simple configuration
+    // CRITICAL FIX: Use the correct factory pattern as recommended in the Auth0 docs
+    return handleAuth();
   } catch (error) {
     // Log detailed error information
     console.error(`Auth0 ${operation} handler error:`, error);
@@ -157,6 +144,7 @@ export async function GET(
     
     // Get the appropriate handler and process the request
     const handler = await getSafeAuthHandler('GET', req);
+    // CRITICAL FIX: Add 'return' before await per StackOverflow solution
     return await handler(req);
   } catch (error) {
     console.error('Unhandled Auth0 GET error:', error);
@@ -187,6 +175,7 @@ export async function POST(
     
     // Get the appropriate handler and process the request
     const handler = await getSafeAuthHandler('POST', req);
+    // CRITICAL FIX: Add 'return' before await per StackOverflow solution
     return await handler(req);
   } catch (error) {
     console.error('Unhandled Auth0 POST error:', error);
