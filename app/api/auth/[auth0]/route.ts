@@ -3,27 +3,65 @@ import { NextResponse } from 'next/server';
 // Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
 
-// Validate required environment variables at runtime
-function validateEnvVars() {
-  const requiredVars = [
-    'AUTH0_SECRET',
-    'AUTH0_BASE_URL',
-    'AUTH0_ISSUER_BASE_URL', 
-    'AUTH0_CLIENT_ID',
-    'AUTH0_CLIENT_SECRET'
-  ];
+/**
+ * Validates and normalizes Auth0 environment variables
+ * Handles cases where placeholders like ${VERCEL_URL} aren't properly interpolated
+ */
+function getValidatedEnvVars() {
+  // Get required environment variables
+  const auth0Secret = process.env.AUTH0_SECRET;
+  let auth0BaseUrl = process.env.AUTH0_BASE_URL || '';
+  const auth0IssuerBaseUrl = process.env.AUTH0_ISSUER_BASE_URL;
+  const auth0ClientId = process.env.AUTH0_CLIENT_ID;
+  const auth0ClientSecret = process.env.AUTH0_CLIENT_SECRET;
   
-  const missing = requiredVars.filter(varName => !process.env[varName]);
+  // Check if any required variables are missing
+  const missingVars = [];
+  if (!auth0Secret) missingVars.push('AUTH0_SECRET');
+  if (!auth0BaseUrl) missingVars.push('AUTH0_BASE_URL');
+  if (!auth0IssuerBaseUrl) missingVars.push('AUTH0_ISSUER_BASE_URL');
+  if (!auth0ClientId) missingVars.push('AUTH0_CLIENT_ID');
+  if (!auth0ClientSecret) missingVars.push('AUTH0_CLIENT_SECRET');
   
-  if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  if (missingVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
+  
+  // Special handling for BASE_URL - detect if it contains unresolved ${VERCEL_URL} or similar
+  if (auth0BaseUrl.includes('${') && auth0BaseUrl.includes('}')) {
+    // Extract hostname from request for fallback
+    console.error(`AUTH0_BASE_URL contains unresolved placeholders: ${auth0BaseUrl}`);
+    
+    // Use Vercel URL as fallback if available
+    if (process.env.VERCEL_URL) {
+      auth0BaseUrl = `https://${process.env.VERCEL_URL}`;
+      console.log(`Using VERCEL_URL as fallback: ${auth0BaseUrl}`);
+    } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+      auth0BaseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+      console.log(`Using NEXT_PUBLIC_VERCEL_URL as fallback: ${auth0BaseUrl}`);
+    } else {
+      // If we can't determine the URL, we have to fail
+      throw new Error(`AUTH0_BASE_URL contains unresolved placeholders and no fallback is available`);
+    }
+  }
+  
+  return {
+    auth0Secret,
+    auth0BaseUrl,
+    auth0IssuerBaseUrl,
+    auth0ClientId,
+    auth0ClientSecret
+  };
 }
 
-// Create a safe Auth0 handler that handles all errors
-async function getSafeAuthHandler(operation: string) {
+/**
+ * Creates an Auth0 handler with detailed error reporting
+ */
+async function getSafeAuthHandler(operation: string, req: Request) {
   try {
-    validateEnvVars();
+    // Get and validate environment variables
+    const envVars = getValidatedEnvVars();
+    console.log(`Auth0 ${operation} handler initialized with base URL: ${envVars.auth0BaseUrl}`);
     
     // Import Auth0 SDK dynamically to prevent build-time evaluation
     const { handleAuth, handleLogin, handleCallback, handleLogout } = await import('@auth0/nextjs-auth0');
@@ -49,14 +87,33 @@ async function getSafeAuthHandler(operation: string) {
       }),
     });
   } catch (error) {
+    // Log detailed error information
     console.error(`Auth0 ${operation} handler error:`, error);
+    if (error instanceof Error) {
+      console.error(`Error details: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    }
+    
+    // Check for common Auth0 configuration issues
+    let errorMessage = `Failed to initialize Auth0 ${operation} handler`;
+    if (error instanceof Error) {
+      if (error.message.includes('AUTH0_BASE_URL')) {
+        errorMessage = `Auth0 base URL configuration error: ${error.message}`;
+      } else if (error.message.includes('AUTH0_SECRET')) {
+        errorMessage = `Auth0 secret configuration error: ${error.message}`;
+      } else {
+        errorMessage = `Auth0 configuration error: ${error.message}`;
+      }
+    }
     
     // Return a function that produces an appropriate error response
     return () => {
       return NextResponse.json(
         { 
           error: 'Authentication service configuration error',
-          message: `Failed to initialize Auth0 ${operation} handler` 
+          message: errorMessage,
+          url: req.url,
+          timestamp: new Date().toISOString()
         },
         { status: 500 }
       );
@@ -78,12 +135,17 @@ export async function GET(
     console.log(`Auth0 GET request for: ${params.auth0}`, { url: req.url });
     
     // Get the appropriate handler and process the request
-    const handler = await getSafeAuthHandler('GET');
+    const handler = await getSafeAuthHandler('GET', req);
     return await handler(req);
   } catch (error) {
     console.error('Unhandled Auth0 GET error:', error);
     return NextResponse.json(
-      { error: 'Authentication error', message: 'An unexpected error occurred' },
+      { 
+        error: 'Authentication error', 
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        url: req.url,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
@@ -103,12 +165,17 @@ export async function POST(
     console.log(`Auth0 POST request for: ${params.auth0}`, { url: req.url });
     
     // Get the appropriate handler and process the request
-    const handler = await getSafeAuthHandler('POST');
+    const handler = await getSafeAuthHandler('POST', req);
     return await handler(req);
   } catch (error) {
     console.error('Unhandled Auth0 POST error:', error);
     return NextResponse.json(
-      { error: 'Authentication error', message: 'An unexpected error occurred' },
+      { 
+        error: 'Authentication error', 
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        url: req.url,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

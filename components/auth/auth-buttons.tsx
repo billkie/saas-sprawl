@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -14,23 +14,124 @@ interface AuthButtonProps {
 export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [fallbackMode, setFallbackMode] = useState(false);
+  
+  // Check if the standard Auth0 endpoints are working
+  useEffect(() => {
+    async function checkAuthEndpoints() {
+      try {
+        const response = await fetch('/api/auth/status');
+        if (!response.ok) {
+          console.warn('Auth0 endpoints not working properly, enabling fallback mode');
+          setFallbackMode(true);
+        }
+      } catch (error) {
+        console.error('Error checking Auth0 status:', error);
+        setFallbackMode(true);
+      }
+    }
+    
+    checkAuthEndpoints();
+  }, []);
+  
+  // Direct construction of Auth0 URL as a fallback
+  async function getDirectAuth0Url(screenHint?: string) {
+    try {
+      // First try to get configuration from debug endpoint
+      const response = await fetch('/api/auth/debug');
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract the Auth0 domain from issuer URL
+        let auth0Domain = '';
+        let clientId = '';
+        
+        if (data.config.issuerUrlPrefix) {
+          // Extract domain from issuer URL
+          const match = data.config.issuerUrlPrefix.match(/https:\/\/([^.]+)\./);
+          if (match && match[1]) {
+            auth0Domain = match[1] + '.auth0.com';
+          }
+        }
+        
+        // Use host as redirect URI
+        const redirectUri = window.location.origin + '/api/auth/callback';
+        
+        // Construct Auth0 universal login URL directly
+        if (auth0Domain) {
+          let url = `https://${auth0Domain}/authorize?`;
+          url += `response_type=code`;
+          url += `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+          url += `&scope=openid+profile+email`;
+          
+          // Add screen_hint for signup if needed
+          if (screenHint === 'signup') {
+            url += `&screen_hint=signup`;
+          }
+          
+          return url;
+        }
+      }
+      
+      throw new Error('Could not construct Auth0 URL from available information');
+    } catch (error) {
+      console.error('Failed to create direct Auth0 URL:', error);
+      throw error;
+    }
+  }
   
   const handleAuth = async () => {
     try {
       setIsLoading(true);
       
-      // Use the correct Auth0 endpoint based on whether this is signup or login
-      // Route pattern: /api/auth/[auth0]
+      // FALLBACK APPROACH 1: Try our direct auth endpoints first
+      // These are designed to work around environment variable problems
+      if (fallbackMode) {
+        try {
+          const directEndpoint = isSignUp 
+            ? `/api/auth/direct-signup` 
+            : `/api/auth/direct-login`;
+          
+          // Add cache busting parameter
+          const directUrl = `${directEndpoint}?t=${Date.now()}`;
+          
+          console.log(`Using direct auth endpoint: ${directUrl}`);
+          window.location.href = directUrl;
+          return; // Wait for redirect
+        } catch (directError) {
+          console.error('Direct auth endpoint failed:', directError);
+          // Continue to next fallback
+        }
+      }
+      
+      // FALLBACK APPROACH 2: Try to construct Auth0 URL directly
+      if (fallbackMode) {
+        try {
+          // Use direct Auth0 URL construction as fallback
+          const constructedUrl = await getDirectAuth0Url(isSignUp ? 'signup' : undefined);
+          if (constructedUrl) {
+            console.log(`Using constructed Auth0 URL: ${constructedUrl}`);
+            window.location.href = constructedUrl;
+            return; // Wait for redirect
+          }
+        } catch (fallbackError) {
+          console.error('Constructed Auth0 URL failed:', fallbackError);
+          // Continue to standard approach as last resort
+        }
+      }
+      
+      // STANDARD APPROACH: Use the SDK-based Auth0 endpoint
       const endpoint = isSignUp 
         ? `/api/auth/signup` // This maps to handleAuth's signup handler
         : `/api/auth/login`;  // This maps to handleAuth's login handler
       
-      // Add a cache-busting parameter to avoid any CDN caching issues
+      // Add cache-busting parameter to avoid any CDN caching issues
       const url = `${endpoint}?t=${Date.now()}`;
-        
-      // Navigate to the auth endpoint - we use window.location for a complete page reload
-      // This ensures we don't have any React state issues during the auth flow
+      
+      console.log(`Using standard Auth0 endpoint: ${url}`);
+      // Navigate to the auth endpoint
       window.location.href = url;
+      
     } catch (error) {
       console.error('Authentication error:', error);
       setIsLoading(false);

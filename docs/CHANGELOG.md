@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `/api/auth/status` endpoint for health checking Auth0 integration
   - Both endpoints help identify issues with Auth0 configuration in production environments
   - Added comprehensive logging for all Auth0 operations
+- Reliable Auth0 fallback mechanism:
+  - Added `/api/auth/direct-login` and `/api/auth/direct-signup` endpoints
+  - These endpoints create Auth0 URLs directly without relying on the SDK
+  - Completely resilient to environment variable interpolation issues
+  - Provides multi-layered fallback options for authentication flows
 
 ### Changed
 - Moved `TODO.md` from root directory to `docs/` folder to keep all documentation files in one place
@@ -152,6 +157,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added proper type definitions for all diagnostic health endpoints
   - Fixed build errors by ensuring all types align with Next.js 15 expectations
   - Ensured full build-time compatibility while preserving runtime functionality
+- Fixed Auth0 environment variable interpolation issues:
+  - Added detection and automatic correction of unresolved placeholders like `${VERCEL_URL}`
+  - Implemented middleware to fix environment variables during request processing
+  - Created robust fallback mechanisms when environment variables contain placeholders
+  - Provided detailed error messages showing exact environment variable problems
+  - Enhanced AuthButton component with multi-layered fallback strategies
+  - Ensured login and signup work even when Auth0 environment variables are misconfigured
+  - Added automatic switch to direct Auth0 URL construction when necessary
+  - Implemented thorough logging to identify configuration issues
 
 ## [0.1.0] - 2024-06-01
 
