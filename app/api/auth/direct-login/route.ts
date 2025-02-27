@@ -23,15 +23,10 @@ export async function GET(req: Request) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
     
-    // Check if AUTH0_BASE_URL contains unresolved VERCEL_URL
-    let auth0BaseUrl = process.env.AUTH0_BASE_URL || '';
-    if (auth0BaseUrl.includes('${VERCEL_URL}')) {
-      console.log('Direct login: Detected unresolved ${VERCEL_URL} in AUTH0_BASE_URL');
-      
-      // Use actual domain from request
-      auth0BaseUrl = baseUrl;
-      console.log(`Direct login: Using request origin as AUTH0_BASE_URL: ${auth0BaseUrl}`);
-    }
+    // CRITICAL FIX: Always override AUTH0_BASE_URL
+    // This ensures it's set correctly for the entire application
+    process.env.AUTH0_BASE_URL = baseUrl;
+    console.log(`Direct login: FORCE SET AUTH0_BASE_URL to ${baseUrl}`);
     
     // Create redirect URI
     const redirectUri = `${baseUrl}/api/auth/callback`;

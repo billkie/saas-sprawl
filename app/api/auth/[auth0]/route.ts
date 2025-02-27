@@ -3,6 +3,17 @@ import { NextResponse } from 'next/server';
 // Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
 
+// CRITICAL FIX: Explicitly set AUTH0_BASE_URL at the module level
+// This ensures it's set before any Auth0 SDK code runs
+if (process.env.AUTH0_BASE_URL?.includes('${VERCEL_URL}')) {
+  // Get actual VERCEL_URL from environment
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    process.env.AUTH0_BASE_URL = `https://${vercelUrl}`;
+    console.log(`Module-level fix: Set AUTH0_BASE_URL to ${process.env.AUTH0_BASE_URL}`);
+  }
+}
+
 /**
  * Validates and normalizes Auth0 environment variables
  * Handles cases where placeholders like ${VERCEL_URL} aren't properly interpolated
@@ -37,6 +48,8 @@ function getValidatedEnvVars(req: Request) {
     if (vercelUrl) {
       // Replace the placeholder with the actual value
       auth0BaseUrl = `https://${vercelUrl}`;
+      // CRITICAL FIX: Also update the process.env value for other modules
+      process.env.AUTH0_BASE_URL = auth0BaseUrl;
       console.log(`Replaced \${VERCEL_URL} with actual value: ${auth0BaseUrl}`);
     } else {
       // Try to get hostname from request as fallback
@@ -44,6 +57,8 @@ function getValidatedEnvVars(req: Request) {
       if (host) {
         const protocol = host.includes('localhost') ? 'http' : 'https';
         auth0BaseUrl = `${protocol}://${host}`;
+        // CRITICAL FIX: Also update the process.env value for other modules
+        process.env.AUTH0_BASE_URL = auth0BaseUrl;
         console.log(`Using request host as fallback: ${auth0BaseUrl}`);
       } else {
         console.error('Could not determine base URL from request or environment');

@@ -169,6 +169,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added explicit runtime handling for uninterpolated environment variables (per Vercel docs)
   - Improved direct-login and direct-signup endpoints with better placeholder detection
   - Updated debug endpoint to provide clearer guidance on fixing environment variables
+  - Implemented critical fix that forces AUTH0_BASE_URL to match request host for all environments
+  - Added module-level environment correction that runs before Auth0 SDK is initialized
+  - Fixed issue where AUTH0_BASE_URL changes in Vercel dashboard didn't apply to all environments
 
 ## [0.1.0] - 2024-06-01
 

@@ -10,12 +10,10 @@ export function middleware(request: NextRequest) {
   const protocol = host.includes('localhost') ? 'http' : 'https';
   const baseUrl = `${protocol}://${host}`;
   
-  // Fix environment variables if they contain unresolved placeholders
-  if (process.env.AUTH0_BASE_URL?.includes('${')) {
-    // Dynamically set AUTH0_BASE_URL using request host
-    process.env.AUTH0_BASE_URL = baseUrl;
-    console.log(`Middleware: Fixed AUTH0_BASE_URL to ${baseUrl}`);
-  }
+  // CRITICAL FIX: ALWAYS override AUTH0_BASE_URL regardless of whether it has placeholders
+  // This ensures it's set correctly for every request
+  process.env.AUTH0_BASE_URL = baseUrl;
+  console.log(`Middleware: Force set AUTH0_BASE_URL to ${baseUrl} for all requests`);
   
   // Continue processing the request
   return NextResponse.next();
