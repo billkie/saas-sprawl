@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import type { LoginOptions, LogoutOptions, AppRouteHandlerFnContext } from '@auth0/nextjs-auth0';
+import type { LoginOptions, LogoutOptions } from '@auth0/nextjs-auth0';
 
 // Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
@@ -86,13 +86,12 @@ async function getSafeAuthHandler(operation: string, req: Request) {
     const envVars = getValidatedEnvVars(req);
     console.log(`Auth0 ${operation} handler initialized with base URL: ${envVars.auth0BaseUrl}`);
     
-    // SIMPLER APPROACH: Use handleAuth directly without the complex custom handlers
-    // This matches how Auth0 actually expects the handlers to work
-    // Import Auth0 SDK dynamically to prevent build-time evaluation
+    // Simplified approach: Use handleAuth without any custom handlers
+    // This is the most reliable pattern for Next.js App Router
     const { handleAuth } = await import('@auth0/nextjs-auth0');
     
-    // Create and return the Auth0 handler with simple configuration
-    // CRITICAL FIX: Use the correct factory pattern as recommended in the Auth0 docs
+    // IMPORTANT: Use the simplest form - when we provide custom handlers,
+    // Next.js App Router has issues with the parameters
     return handleAuth();
   } catch (error) {
     // Log detailed error information
@@ -141,6 +140,18 @@ export async function GET(
     // In Next.js 15 App Router, params is a Promise that must be awaited
     const params = await context.params;
     console.log(`Auth0 GET request for: ${params.auth0}`, { url: req.url });
+    
+    // Special handling for signup route
+    if (params.auth0 === 'signup') {
+      console.log('Processing signup request through direct method...');
+      
+      // For signup, we redirect to the login endpoint with screen_hint=signup
+      const loginUrl = new URL(`${req.url.split('/signup')[0]}/login`);
+      loginUrl.searchParams.set('screen_hint', 'signup');
+      loginUrl.searchParams.set('returnTo', '/onboarding');
+      
+      return NextResponse.redirect(loginUrl);
+    }
     
     // Get the appropriate handler and process the request
     const handler = await getSafeAuthHandler('GET', req);
@@ -194,7 +205,7 @@ export async function POST(
 /**
  * This handles all Auth0 routes:
  * /api/auth/login - Auth0 login with redirects
- * /api/auth/signup - Auth0 signup with screen_hint=signup
+ * /api/auth/signup - Auth0 signup with screen_hint=signup (handled by redirecting to login)
  * /api/auth/callback - Callback URL from Auth0
  * /api/auth/logout - Auth0 logout
  */

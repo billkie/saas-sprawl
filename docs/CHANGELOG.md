@@ -182,6 +182,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplified the handleAuth implementation to use fewer parameters and reduce errors
   - Implemented proper error handling for Auth0 handler initialization
   - Applied production-tested pattern for Auth0 in Next.js 15 App Router
+- Fixed signup flow with Auth0 in Next.js App Router:
+  - Resolved "Cannot destructure property 'params' of 'n' as it is undefined" error on signup
+  - Implemented custom handling of the `/api/auth/signup` route with redirect to login with proper parameters
+  - Removed custom handleAuth configuration that was causing type errors
+  - Updated AuthButton component to use login endpoint with screen_hint=signup parameter for signup
+  - Added explicit returnTo paths for different authentication flows (/dashboard for login, /onboarding for signup)
+  - Implemented simplified handler pattern that works reliably in Next.js App Router
+  - Added special route handling to redirect signup requests to login with the appropriate parameters
+  - Enhanced request parameter handling with URLSearchParams for better clarity
+  - Added detailed logging throughout the authentication flow
+  - Fixed mismatched handling of Auth0 request contexts that was causing the destructuring error
 
 ## [0.1.0] - 2024-06-01
 

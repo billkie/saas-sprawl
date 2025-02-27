@@ -121,14 +121,27 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
       }
       
       // STANDARD APPROACH: Use the SDK-based Auth0 endpoint
-      const endpoint = isSignUp 
-        ? `/api/auth/signup` // This maps to handleAuth's signup handler
-        : `/api/auth/login`;  // This maps to handleAuth's login handler
+      // For signup, always use the login endpoint with screen_hint=signup
+      // This matches the route handling in our API
+      let endpoint = '/api/auth/login';
+      const params = new URLSearchParams();
       
       // Add cache-busting parameter to avoid any CDN caching issues
-      const url = `${endpoint}?t=${Date.now()}`;
+      params.append('t', Date.now().toString());
       
+      // If signing up, add screen_hint and set returnTo to onboarding
+      if (isSignUp) {
+        console.log('Using signup flow with screen_hint=signup');
+        params.append('screen_hint', 'signup');
+        params.append('returnTo', '/onboarding');
+      } else {
+        // For login, return to dashboard
+        params.append('returnTo', '/dashboard');
+      }
+      
+      const url = `${endpoint}?${params.toString()}`;
       console.log(`Using standard Auth0 endpoint: ${url}`);
+      
       // Navigate to the auth endpoint
       window.location.href = url;
       
