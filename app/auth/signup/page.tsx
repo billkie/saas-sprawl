@@ -39,7 +39,7 @@ export default function SignUpPage() {
           </div>
           <div className="grid gap-6">
             <Button variant="outline" asChild>
-              <a href="/signup" className="flex items-center justify-center">
+              <a href="/api/auth/login?screen_hint=signup" className="flex items-center justify-center">
                 <svg
                   className="mr-2 h-4 w-4"
                   aria-hidden="true"

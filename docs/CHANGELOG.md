@@ -58,6 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resolved build errors related to incompatible Auth0 handler options
   - Implemented custom login/signup routes with proper state parameter serialization
   - Added error handling to authentication routes for better user experience
+- Fixed authentication flow issues with signup and login:
+  - Updated login button to correctly point to `/api/auth/login` instead of `/login`
+  - Updated signup button to correctly point to `/api/auth/login?screen_hint=signup` instead of `/signup`
+  - This resolves issues with signup and login on dev.quacco.com
 
 ## [0.1.0] - 2024-06-01
 
