@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated API endpoints to handle Auth0 authentication correctly
   - Added direct login/signup routes with custom Auth0 authorization URLs
   - Implemented proper error handling for authentication flow
+- Client-side authentication components:
+  - Created reusable AuthButton component for login and signup handling
+  - Implemented proper client-side redirects using Next.js router
 
 ### Changed
 - Moved `TODO.md` from root directory to `docs/` folder to keep all documentation files in one place
@@ -29,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved user onboarding flow to include company information collection
 - Updated environment variables to use the correct domain (quacco.com)
 - Simplified Auth0 route handlers to avoid TypeScript errors with custom handlers
+- Refactored authentication flow to use client components with proper Auth0 SDK integration
 
 ### Fixed
 - Auth0 session dynamic rendering errors:
@@ -65,6 +69,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed custom login/signup route handlers that were conflicting with Auth0 SDK
   - Enhanced API route handler to properly support all Auth0 operations
   - Added explicit returnTo and redirectUri parameters to Auth0 handler to ensure proper redirection
+- Completely revamped Auth0 implementation following best practices:
+  - Created client-side AuthButton component for proper programmatic authentication
+  - Simplified Auth0 route handler configuration to avoid type conflicts
+  - Updated sign in and sign up pages to use the client component instead of direct links
+- Fixed critical Auth0 build error:
+  - Resolved `TypeError: Cannot read properties of undefined (reading 'headers')` during build
+  - Implemented dynamic imports for Auth0 SDK to prevent execution during build time
+  - Added `dynamic = 'force-dynamic'` flag to Auth0 API route
+  - Refactored Auth0 route handler to use request-based API compatible with App Router
+  - Separated GET and POST handler implementations for better build compatibility
+- Fixed TypeScript type error in Auth0 route handler:
+  - Resolved type mismatch with params in route handler functions
+  - Added explicit RouteParams type to match Next.js App Router expectations
+  - Updated handler to use the proper context object structure
+  - Fixed build error related to Promise type mismatch in params
+- Restructured Auth0 route implementation for compatibility with Next.js App Router:
+  - Separated Auth0 SDK initialization into dedicated auth-handler.ts file
+  - Implemented build-safe dynamic imports with error handling
+  - Simplified route handler structure to align with App Router requirements
+  - Added explicit route validation for better error handling
+  - Implemented proper error responses for failed authentication
+- Resolved Next.js 15 async parameter type error in Auth0 handler:
+  - Fixed critical type mismatch error with route parameters in Auth0 route handler
+  - Refactored Auth0 integration to properly handle async parameters in Next.js 15
+  - Integrated Auth0 handler directly into route file with proper parameter type handling
+  - Simplified authentication flow by removing unnecessary dynamic imports
+  - Added proper TypeScript typing to match Next.js 15 App Router requirements
+- Fixed critical Next.js 15 Promise-based route params type issue:
+  - Completely refactored Auth0 route handler to match Next.js 15's exact type expectations
+  - Changed route parameter definition to use Promise type correctly: `params: Promise<{ auth0: string }>`
+  - Implemented proper Promise resolution with `await params` pattern
+  - Created a reusable handler function to encapsulate Auth0 logic while maintaining type safety
+  - Separated Auth0 configuration from handler instantiation to avoid type conflicts
 
 ## [0.1.0] - 2024-06-01
 
