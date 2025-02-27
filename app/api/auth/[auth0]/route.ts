@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
  * Validates and normalizes Auth0 environment variables
  * Handles cases where placeholders like ${VERCEL_URL} aren't properly interpolated
  */
-function getValidatedEnvVars() {
+function getValidatedEnvVars(req: Request) {
   // Get required environment variables
   const auth0Secret = process.env.AUTH0_SECRET;
   let auth0BaseUrl = process.env.AUTH0_BASE_URL || '';
@@ -28,20 +28,26 @@ function getValidatedEnvVars() {
   }
   
   // Special handling for BASE_URL - detect if it contains unresolved ${VERCEL_URL} or similar
-  if (auth0BaseUrl.includes('${') && auth0BaseUrl.includes('}')) {
-    // Extract hostname from request for fallback
-    console.error(`AUTH0_BASE_URL contains unresolved placeholders: ${auth0BaseUrl}`);
+  if (auth0BaseUrl.includes('${VERCEL_URL}')) {
+    console.log('Detected unresolved ${VERCEL_URL} in AUTH0_BASE_URL');
     
-    // Use Vercel URL as fallback if available
-    if (process.env.VERCEL_URL) {
-      auth0BaseUrl = `https://${process.env.VERCEL_URL}`;
-      console.log(`Using VERCEL_URL as fallback: ${auth0BaseUrl}`);
-    } else if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-      auth0BaseUrl = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-      console.log(`Using NEXT_PUBLIC_VERCEL_URL as fallback: ${auth0BaseUrl}`);
+    // Get actual VERCEL_URL from environment
+    const vercelUrl = process.env.VERCEL_URL;
+    
+    if (vercelUrl) {
+      // Replace the placeholder with the actual value
+      auth0BaseUrl = `https://${vercelUrl}`;
+      console.log(`Replaced \${VERCEL_URL} with actual value: ${auth0BaseUrl}`);
     } else {
-      // If we can't determine the URL, we have to fail
-      throw new Error(`AUTH0_BASE_URL contains unresolved placeholders and no fallback is available`);
+      // Try to get hostname from request as fallback
+      const host = req.headers.get('host');
+      if (host) {
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        auth0BaseUrl = `${protocol}://${host}`;
+        console.log(`Using request host as fallback: ${auth0BaseUrl}`);
+      } else {
+        console.error('Could not determine base URL from request or environment');
+      }
     }
   }
   
@@ -60,7 +66,7 @@ function getValidatedEnvVars() {
 async function getSafeAuthHandler(operation: string, req: Request) {
   try {
     // Get and validate environment variables
-    const envVars = getValidatedEnvVars();
+    const envVars = getValidatedEnvVars(req);
     console.log(`Auth0 ${operation} handler initialized with base URL: ${envVars.auth0BaseUrl}`);
     
     // Import Auth0 SDK dynamically to prevent build-time evaluation

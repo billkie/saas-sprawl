@@ -166,6 +166,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensured login and signup work even when Auth0 environment variables are misconfigured
   - Added automatic switch to direct Auth0 URL construction when necessary
   - Implemented thorough logging to identify configuration issues
+  - Added explicit runtime handling for uninterpolated environment variables (per Vercel docs)
+  - Improved direct-login and direct-signup endpoints with better placeholder detection
+  - Updated debug endpoint to provide clearer guidance on fixing environment variables
 
 ## [0.1.0] - 2024-06-01
 

@@ -15,6 +15,11 @@ export async function GET(req: Request) {
     const rawBaseUrl = process.env.AUTH0_BASE_URL || '';
     const hasPlaceholders = rawBaseUrl.includes('${') && rawBaseUrl.includes('}');
     
+    // Get the actual domain that's being used
+    const host = req.headers.get('host') || '';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const actualBaseUrl = `${protocol}://${host}`;
+    
     // Collect relevant environment variables for diagnosis
     const auth0Config = {
       // Check if essential Auth0 variables are defined (without revealing values)
@@ -30,6 +35,14 @@ export async function GET(req: Request) {
       
       // Environment variable quality checks
       baseUrlHasPlaceholders: hasPlaceholders,
+      actualDomain: actualBaseUrl,
+      vercelSystem: {
+        vercelUrl: process.env.VERCEL_URL,
+        vercelEnv: process.env.VERCEL_ENV,
+        vercelRegion: process.env.VERCEL_REGION,
+        vercelId: process.env.VERCEL_ID,
+        vercelTimestamp: process.env.VERCEL_TIMESTAMP
+      },
       potentialFallbacks: {
         vercelUrlAvailable: !!process.env.VERCEL_URL,
         vercelUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
@@ -58,11 +71,13 @@ export async function GET(req: Request) {
         signup: '/api/auth/signup',
         callback: '/api/auth/callback',
         logout: '/api/auth/logout',
+        directLogin: '/api/auth/direct-login',
+        directSignup: '/api/auth/direct-signup',
         debug: '/api/auth/debug',
         status: '/api/auth/status'
       },
       recommendedAction: hasPlaceholders 
-        ? "Your AUTH0_BASE_URL contains unresolved placeholders. Update your environment variable to use the actual domain or set VERCEL_URL." 
+        ? `Your AUTH0_BASE_URL contains unresolved placeholders. To fix this permanently, you should update your environment variable in the Vercel dashboard to use '${actualBaseUrl}' instead of using a dynamic \${VERCEL_URL} reference. In the meantime, our system should automatically use the actual domain for authentication.` 
         : null
     });
   } catch (error) {
