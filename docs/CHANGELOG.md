@@ -29,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved user onboarding flow to include company information collection
 - Updated environment variables to use the correct domain (quacco.com)
 - Simplified Auth0 route handlers to avoid TypeScript errors with custom handlers
-- Changed login/signup flow to use direct custom routes instead of Auth0 handlers
 
 ### Fixed
 - Auth0 session dynamic rendering errors:
@@ -62,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated login button to correctly point to `/api/auth/login` instead of `/login`
   - Updated signup button to correctly point to `/api/auth/login?screen_hint=signup` instead of `/signup`
   - This resolves issues with signup and login on dev.quacco.com
+- Resolved conflicting Auth0 implementations:
+  - Removed custom login/signup route handlers that were conflicting with Auth0 SDK
+  - Enhanced API route handler to properly support all Auth0 operations
+  - Added explicit returnTo and redirectUri parameters to Auth0 handler to ensure proper redirection
 
 ## [0.1.0] - 2024-06-01
 
