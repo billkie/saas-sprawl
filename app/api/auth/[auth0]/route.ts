@@ -1,48 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { handleAuth, handleLogin, handleCallback, handleLogout } from '@auth0/nextjs-auth0';
+import { 
+  handleAuth, 
+  handleLogin, 
+  handleCallback, 
+  handleLogout,
+  handleProfile,
+  LoginOptions,
+  CallbackOptions,
+  LogoutOptions,
+  ProfileOptions
+} from '@auth0/nextjs-auth0';
 
 // Force this route to be dynamic and evaluated only at runtime
 export const dynamic = 'force-dynamic';
 
 /**
- * Auth0 route handler
- * 
- * Next.js 15 requires route parameters to be accessed asynchronously,
- * so we create a custom handler that works with the Promise-based params.
+ * Auth0 route handler for Next.js 15 App Router
  */
 
-// Create the Auth0 handler configuration
-const authOptions = {
-  login: handleLogin({
+// This function creates a properly configured Auth0 handler
+async function createAuthHandler(
+  request: NextRequest, 
+  auth0Route: string
+) {
+  // Parse the URL to get query parameters
+  const url = new URL(request.url);
+  const returnTo = url.searchParams.get('returnTo') || '/dashboard';
+  const screenHint = url.searchParams.get('screen_hint');
+  
+  // Set up options for each Auth0 operation
+  const loginOptions: LoginOptions = {
     authorizationParams: {
-      scope: 'openid profile email'
+      // Add screen_hint for signup if provided
+      ...(screenHint === 'signup' ? { screen_hint: 'signup' } : {}),
+      // Standard login parameters
+      scope: 'openid profile email',
+      redirect_uri: process.env.AUTH0_CALLBACK_URL
     },
-    returnTo: '/dashboard'
-  }),
-  callback: handleCallback({
+    returnTo
+  };
+  
+  const callbackOptions: CallbackOptions = {
     redirectUri: process.env.AUTH0_CALLBACK_URL
-  }),
-  logout: handleLogout({
+  };
+  
+  const logoutOptions: LogoutOptions = {
     returnTo: '/'
-  })
-};
+  };
 
-// This function defines a custom auth handler that matches Next.js 15's expectations
-async function createHandler(request: NextRequest, auth0Route: string) {
-  // Validate route
-  const validRoutes = ['login', 'callback', 'logout', 'me'];
-  if (!validRoutes.includes(auth0Route)) {
-    return new NextResponse(null, { status: 404 });
-  }
-
-  try {
-    // Create a dynamic handler per request to avoid type issues
-    const handler = handleAuth(authOptions);
-    return await handler(request);
-  } catch (error) {
-    console.error('Auth0 error:', error);
-    return new NextResponse('Authentication error', { status: 500 });
-  }
+  const profileOptions: ProfileOptions = {};
+  
+  // Create the Auth0 handler with configured options
+  const handler = handleAuth({
+    login: handleLogin(loginOptions),
+    callback: handleCallback(callbackOptions),
+    logout: handleLogout(logoutOptions),
+    profile: handleProfile(profileOptions)
+  });
+  
+  return handler;
 }
 
 // Route handler with correct parameter type handling for Next.js 15
@@ -52,17 +68,45 @@ export async function GET(
 ) {
   // Get the params from the Promise
   const resolvedParams = await params;
-  return createHandler(request, resolvedParams.auth0);
+  const auth0Route = resolvedParams.auth0;
+  
+  // Validate the route is supported
+  const validRoutes = ['login', 'callback', 'logout', 'me'];
+  if (!validRoutes.includes(auth0Route)) {
+    return new NextResponse(`Auth route '${auth0Route}' not found`, { status: 404 });
+  }
+  
+  try {
+    // Create and use the handler
+    const handler = await createAuthHandler(request, auth0Route);
+    return await handler(request);
+  } catch (error: any) {
+    // Improved error handling
+    console.error('Auth0 error:', error);
+    const statusCode = error.status || 500;
+    const message = error.message || 'Authentication error';
+    return new NextResponse(message, { status: statusCode });
+  }
 }
 
-// POST handler with correct parameter type handling for Next.js 15
+// POST handler for Auth0 operations that require POST
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ auth0: string }> }
 ) {
   // Get the params from the Promise
   const resolvedParams = await params;
-  return createHandler(request, resolvedParams.auth0);
+  const auth0Route = resolvedParams.auth0;
+  
+  try {
+    const handler = await createAuthHandler(request, auth0Route);
+    return await handler(request);
+  } catch (error: any) {
+    console.error('Auth0 error:', error);
+    const statusCode = error.status || 500;
+    const message = error.message || 'Authentication error';
+    return new NextResponse(message, { status: statusCode });
+  }
 }
 
 // This handles all Auth0 routes:

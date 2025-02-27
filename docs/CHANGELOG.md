@@ -102,6 +102,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented proper Promise resolution with `await params` pattern
   - Created a reusable handler function to encapsulate Auth0 logic while maintaining type safety
   - Separated Auth0 configuration from handler instantiation to avoid type conflicts
+- Fixed Auth0 login and signup functionality errors:
+  - Completely refactored Auth0 route handler to properly handle all Auth0 operations
+  - Added support for `screen_hint=signup` parameter to enable signup functionality
+  - Enhanced AuthButton component with loading state and improved error handling
+  - Fixed 500 error during login by properly configuring auth parameters
+  - Fixed 404 error during signup by correctly passing screen_hint to Auth0
+  - Added specific returnTo paths for login and signup flows
+  - Improved error handling with status code preservation and detailed error messages
+  - Added Auth0 profile handling for user information retrieval
+  - Ensured proper redirect_uri configuration in Auth0 login parameters
 
 ## [0.1.0] - 2024-06-01
 
