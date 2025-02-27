@@ -18,10 +18,10 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
     try {
       setIsLoading(true);
       
-      // Construct the auth URL with proper query parameters
+      // Use the correct Auth0 endpoint based on whether this is signup or login
       const endpoint = isSignUp 
-        ? `/api/auth/login?screen_hint=signup&returnTo=/onboarding` 
-        : `/api/auth/login?returnTo=/dashboard`;
+        ? `/api/auth/signup` // Use the dedicated signup handler we configured
+        : `/api/auth/login`;
         
       // Navigate to the auth endpoint
       router.push(endpoint);
@@ -41,7 +41,7 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {isSignUp ? 'Redirecting...' : 'Redirecting...'}
+          {isSignUp ? 'Redirecting to signup...' : 'Redirecting to login...'}
         </>
       ) : (
         <>

@@ -112,6 +112,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved error handling with status code preservation and detailed error messages
   - Added Auth0 profile handling for user information retrieval
   - Ensured proper redirect_uri configuration in Auth0 login parameters
+- Implemented final Auth0 integration fix for login and signup:
+  - Fixed login 500 error: "Cannot destructure property 'params' of 'n' as it is undefined"
+  - Fixed signup 404 error: "Auth route 'signup' not found"
+  - Completely rewrote Auth0 handler using the official Auth0 factory pattern
+  - Added dedicated signup handler with proper screen_hint configuration
+  - Simplified route handlers to eliminate parameter destructuring issues
+  - Updated AuthButton component to use the correct signup/login endpoints
+  - Applied the exact pattern from Auth0's official Next.js App Router documentation
+  - Removed all custom route handling code that was causing conflicts
+  - Added proper error context forwarding for Auth0 operations
+- Implemented definitive Auth0 build and runtime fix:
+  - Resolved the final build error: "Cannot read properties of undefined (reading 'headers')"
+  - Implemented true dynamic imports for Auth0 SDK to completely prevent build-time evaluation
+  - Fixed Auth0 handler initialization to only occur at runtime, not during build
+  - Corrected request parameter type to use standard Web Request interface
+  - Eliminated context parameter that was causing destructuring errors
+  - Maintained dedicated signup route with proper screen_hint configuration
+  - Ensured proper login/signup functionality while fixing build errors
+  - Applied the most reliable pattern for Next.js App Router + Auth0 integration
+  - Fully complies with Next.js 15 build requirements and Auth0 SDK expectations
 
 ## [0.1.0] - 2024-06-01
 
