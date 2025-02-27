@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 interface AuthButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
@@ -19,15 +20,27 @@ export function AuthButton({ variant = 'outline', isSignUp = false }: AuthButton
       setIsLoading(true);
       
       // Use the correct Auth0 endpoint based on whether this is signup or login
+      // Route pattern: /api/auth/[auth0]
       const endpoint = isSignUp 
-        ? `/api/auth/signup` // Use the dedicated signup handler we configured
-        : `/api/auth/login`;
+        ? `/api/auth/signup` // This maps to handleAuth's signup handler
+        : `/api/auth/login`;  // This maps to handleAuth's login handler
+      
+      // Add a cache-busting parameter to avoid any CDN caching issues
+      const url = `${endpoint}?t=${Date.now()}`;
         
-      // Navigate to the auth endpoint
-      router.push(endpoint);
+      // Navigate to the auth endpoint - we use window.location for a complete page reload
+      // This ensures we don't have any React state issues during the auth flow
+      window.location.href = url;
     } catch (error) {
       console.error('Authentication error:', error);
       setIsLoading(false);
+      
+      // Show error toast
+      toast({
+        title: 'Authentication Error',
+        description: 'There was a problem connecting to the authentication service. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 

@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client-side authentication components:
   - Created reusable AuthButton component for login and signup handling
   - Implemented proper client-side redirects using Next.js router
+- Auth0 diagnostic tools for improved troubleshooting:
+  - Added `/api/auth/debug` endpoint that provides configuration information (without exposing secrets)
+  - Added `/api/auth/status` endpoint for health checking Auth0 integration
+  - Both endpoints help identify issues with Auth0 configuration in production environments
+  - Added comprehensive logging for all Auth0 operations
 
 ### Changed
 - Moved `TODO.md` from root directory to `docs/` folder to keep all documentation files in one place
@@ -132,6 +137,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensured proper login/signup functionality while fixing build errors
   - Applied the most reliable pattern for Next.js App Router + Auth0 integration
   - Fully complies with Next.js 15 build requirements and Auth0 SDK expectations
+- Fixed Auth0 production deployment 500 errors:
+  - Added comprehensive error handling for Auth0 route operations
+  - Implemented environment variable validation to detect missing configs
+  - Applied cache-busting parameters to prevent CDN caching issues
+  - Switched from Next.js Router to direct location changes for authentication flows
+  - Enhanced error reporting with detailed logging for easier debugging
+  - Added fallback error responses to prevent silent failures
+  - Improved client-side error handling with user-friendly toast notifications
+  - Fixed cross-site cookie issues with proper SameSite configuration
+- Fixed Auth0 route handler type errors in Next.js 15:
+  - Corrected route handler parameter types to use `Promise<{ auth0: string }>` structure
+  - Properly handled the Promise-based params with await in route handlers
+  - Added proper type definitions for all diagnostic health endpoints
+  - Fixed build errors by ensuring all types align with Next.js 15 expectations
+  - Ensured full build-time compatibility while preserving runtime functionality
 
 ## [0.1.0] - 2024-06-01
 

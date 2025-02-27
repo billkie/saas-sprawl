@@ -1,25 +1,34 @@
-import { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
-// Prevent Next.js from statically optimizing this route
+// Force dynamic to prevent static optimization
 export const dynamic = 'force-dynamic';
 
-/**
- * Auth0 handler for Next.js App Router
- * 
- * Following the official Next.js App Router integration pattern from Auth0
- * See: https://auth0.com/docs/quickstart/webapp/nextjs
- */
+// Validate required environment variables at runtime
+function validateEnvVars() {
+  const requiredVars = [
+    'AUTH0_SECRET',
+    'AUTH0_BASE_URL',
+    'AUTH0_ISSUER_BASE_URL', 
+    'AUTH0_CLIENT_ID',
+    'AUTH0_CLIENT_SECRET'
+  ];
+  
+  const missing = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+}
 
-// This makes it clear we're intentionally not importing Auth0 at the top level
-// to prevent build-time execution issues
-
-// Only dynamically import Auth0 handlers at runtime, not during build
-async function getAuthHandler() {
+// Create a safe Auth0 handler that handles all errors
+async function getSafeAuthHandler(operation: string) {
   try {
-    // This is only imported at runtime, preventing build-time evaluation issues
+    validateEnvVars();
+    
+    // Import Auth0 SDK dynamically to prevent build-time evaluation
     const { handleAuth, handleLogin, handleCallback, handleLogout } = await import('@auth0/nextjs-auth0');
     
-    // Create and return the Auth0 handler with proper configuration
+    // Create and return the Auth0 handler with detailed configuration
     return handleAuth({
       login: handleLogin({
         returnTo: '/dashboard',
@@ -28,7 +37,7 @@ async function getAuthHandler() {
         },
       }),
       signup: handleLogin({
-        returnTo: '/onboarding',
+        returnTo: '/onboarding', 
         authorizationParams: {
           screen_hint: 'signup',
           scope: 'openid profile email',
@@ -36,27 +45,73 @@ async function getAuthHandler() {
       }),
       callback: handleCallback(),
       logout: handleLogout({
-        returnTo: '/'
-      })
+        returnTo: '/',
+      }),
     });
   } catch (error) {
-    console.error('Failed to initialize Auth0 handler:', error);
-    throw error;
+    console.error(`Auth0 ${operation} handler error:`, error);
+    
+    // Return a function that produces an appropriate error response
+    return () => {
+      return NextResponse.json(
+        { 
+          error: 'Authentication service configuration error',
+          message: `Failed to initialize Auth0 ${operation} handler` 
+        },
+        { status: 500 }
+      );
+    };
   }
 }
 
-// The GET handler for Auth0 routes
-export async function GET(req: Request) {
-  // Only load the Auth0 handler at runtime
-  const handler = await getAuthHandler();
-  return handler(req);
+/**
+ * Handle all GET requests to /api/auth/* routes
+ * This handles login, signup, callback, and logout
+ */
+export async function GET(
+  req: Request, 
+  context: { params: Promise<{ auth0: string }> }
+) {
+  try {
+    // In Next.js 15 App Router, params is a Promise that must be awaited
+    const params = await context.params;
+    console.log(`Auth0 GET request for: ${params.auth0}`, { url: req.url });
+    
+    // Get the appropriate handler and process the request
+    const handler = await getSafeAuthHandler('GET');
+    return await handler(req);
+  } catch (error) {
+    console.error('Unhandled Auth0 GET error:', error);
+    return NextResponse.json(
+      { error: 'Authentication error', message: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
 }
 
-// The POST handler for Auth0 routes
-export async function POST(req: Request) {
-  // Only load the Auth0 handler at runtime
-  const handler = await getAuthHandler();
-  return handler(req);
+/**
+ * Handle all POST requests to /api/auth/* routes
+ * This is primarily used for callbacks
+ */
+export async function POST(
+  req: Request, 
+  context: { params: Promise<{ auth0: string }> }
+) {
+  try {
+    // In Next.js 15 App Router, params is a Promise that must be awaited
+    const params = await context.params;
+    console.log(`Auth0 POST request for: ${params.auth0}`, { url: req.url });
+    
+    // Get the appropriate handler and process the request
+    const handler = await getSafeAuthHandler('POST');
+    return await handler(req);
+  } catch (error) {
+    console.error('Unhandled Auth0 POST error:', error);
+    return NextResponse.json(
+      { error: 'Authentication error', message: 'An unexpected error occurred' },
+      { status: 500 }
+    );
+  }
 }
 
 /**
