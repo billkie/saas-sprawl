@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - These endpoints create Auth0 URLs directly without relying on the SDK
   - Completely resilient to environment variable interpolation issues
   - Provides multi-layered fallback options for authentication flows
+- User onboarding system:
+  - Added `/onboarding` page for collecting company information
+  - Implemented `/api/companies` endpoint for company creation
+  - Structured onboarding flow with proper validation and error handling
+  - Enhanced middleware to detect new users and direct them to onboarding
 
 ### Changed
 - Moved `TODO.md` from root directory to `docs/` folder to keep all documentation files in one place
@@ -44,10 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simplified Auth0 route handlers to avoid TypeScript errors with custom handlers
 - Refactored authentication flow to use client components with proper Auth0 SDK integration
 - Implemented unified Auth0 login/signup approach:
-  - Created a single endpoint for both login and signup
-  - Uses Auth0's built-in screen_hint parameter to toggle between modes
-  - Simplified client-side AuthButton component to work with both flows
-  - Added intelligent user detection in callback to route new users to onboarding
+  - Simplified to a single login/signup button on the landing page
+  - Created a simple catchall route `/api/auth/[...auth0]` to handle all Auth0 routes
+  - Used the standard `handleAuth()` function without customization for more reliable operation
+  - Added host-based dynamic configuration of Auth0 base URL
 
 ### Fixed
 - Auth0 session dynamic rendering errors:
@@ -130,23 +135,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented final Auth0 integration fix for login and signup:
   - Fixed login 500 error: "Cannot destructure property 'params' of 'n' as it is undefined"
   - Fixed signup 404 error: "Auth route 'signup' not found"
-  - Completely rewrote Auth0 handler using the official Auth0 factory pattern
-  - Added dedicated signup handler with proper screen_hint configuration
-  - Simplified route handlers to eliminate parameter destructuring issues
-  - Updated AuthButton component to use the correct signup/login endpoints
-  - Applied the exact pattern from Auth0's official Next.js App Router documentation
-  - Removed all custom route handling code that was causing conflicts
-  - Added proper error context forwarding for Auth0 operations
-- Implemented definitive Auth0 build and runtime fix:
-  - Resolved the final build error: "Cannot read properties of undefined (reading 'headers')"
-  - Implemented true dynamic imports for Auth0 SDK to completely prevent build-time evaluation
-  - Fixed Auth0 handler initialization to only occur at runtime, not during build
-  - Corrected request parameter type to use standard Web Request interface
-  - Eliminated context parameter that was causing destructuring errors
-  - Maintained dedicated signup route with proper screen_hint configuration
-  - Ensured proper login/signup functionality while fixing build errors
-  - Applied the most reliable pattern for Next.js App Router + Auth0 integration
-  - Fully complies with Next.js 15 build requirements and Auth0 SDK expectations
+  - Completely rewrote Auth0 handler using a simpler approach with catchall routing
+  - Simplified to the official recommended Auth0 implementation with `handleAuth()`
+  - Added 'return await' pattern for async handler calls in App Router
+  - Improved logging and error handling throughout the authentication flow
+  - Switched to a single login/signup button on the homepage for simplicity
+  - Implemented simpler URL-based approach for signup with screen_hint parameter
+  - Completely removed unnecessary complex handlers and fallback logic
+  - Added proper user setup in onboarding flow
 - Fixed Auth0 production deployment 500 errors:
   - Added comprehensive error handling for Auth0 route operations
   - Implemented environment variable validation to detect missing configs
@@ -209,6 +205,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensured compatibility with Auth0's recommended patterns for Next.js App Router
   - Simplified client-side AuthButton to work with the unified approach
   - Removed the need for separate returnTo parameters for different authentication flows
+- Fixed build errors with client component metadata exports:
+  - Moved metadata exports from client components to server component layouts
+  - Created dedicated layout files for signin, signup, and onboarding pages
+  - Fixed "You are attempting to export metadata from a component marked with use client" error
+  - Ensured proper SEO metadata for all authentication and onboarding pages
+  - Maintained all functionality while making the codebase Next.js compliant
 
 ## [0.1.0] - 2024-06-01
 

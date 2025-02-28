@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useUser } from '@auth0/nextjs-auth0/client';
 import { Button } from '@/components/ui/button';
-import { AuthButton } from '@/components/auth/auth-buttons';
+import { Loader2 } from 'lucide-react';
 import type { Route } from 'next';
 
 const routes = {
@@ -14,20 +14,18 @@ const routes = {
   terms: '/terms' as Route,
   dashboard: '/dashboard' as Route,
   login: '/api/auth/login' as Route,
-  signup: '/api/auth/signup' as Route,
   logout: '/api/auth/logout' as Route,
 } as const;
 
-function AuthButtons() {
+function AuthButton() {
   const { user, isLoading } = useUser();
 
   if (isLoading) {
     return (
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="lg" disabled>
-          Loading...
-        </Button>
-      </div>
+      <Button variant="ghost" size="lg" disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Loading...
+      </Button>
     );
   }
 
@@ -48,19 +46,16 @@ function AuthButtons() {
     );
   }
 
+  // Single login/signup button
   return (
-    <div className="flex items-center space-x-4">
-      <AuthButton 
-        variant="ghost" 
-        isSignUp={false} 
-        text="Log in"
-      />
-      <AuthButton 
-        variant="default" 
-        isSignUp={true} 
-        text="Sign up"
-      />
-    </div>
+    <Link href={{
+      pathname: routes.login,
+      query: { returnTo: '/dashboard' }
+    }}>
+      <Button variant="default" size="lg">
+        Login / Sign Up
+      </Button>
+    </Link>
   );
 }
 
@@ -87,7 +82,7 @@ export default function Home() {
                 Documentation
               </Link>
             </div>
-            <AuthButtons />
+            <AuthButton />
           </nav>
         </header>
 
@@ -113,7 +108,10 @@ export default function Home() {
               Get insights into usage, costs, and renewals.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <Link href={user ? routes.dashboard : routes.signup}>
+              <Link href={{
+                pathname: user ? routes.dashboard : routes.login,
+                query: !user ? { returnTo: '/dashboard' } : undefined
+              }}>
                 <Button 
                   size="lg"
                   className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-8"

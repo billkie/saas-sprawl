@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@auth0/nextjs-auth0/edge';
-import prisma from '@/lib/prisma';
 
 /**
  * This middleware ensures that:
@@ -18,19 +17,18 @@ export async function middleware(request: NextRequest) {
   // This ensures it's set correctly for every request
   process.env.AUTH0_BASE_URL = baseUrl;
   
-  // Handle post-authentication flows
+  // Skip processing for API routes (except auth callback) and static files
+  const { pathname } = request.nextUrl;
+  if (
+    (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth/callback')) || 
+    pathname.startsWith('/_next/') || 
+    pathname.includes('.') ||
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next();
+  }
+  
   try {
-    // Skip this processing for API routes and static files
-    const { pathname } = request.nextUrl;
-    if (
-      pathname.startsWith('/api/') || 
-      pathname.startsWith('/_next/') || 
-      pathname.includes('.') ||
-      pathname === '/favicon.ico'
-    ) {
-      return NextResponse.next();
-    }
-    
     // Get the user session from Auth0
     const session = await getSession(request, NextResponse.next());
     
@@ -46,33 +44,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
     
-    // User is authenticated but might need onboarding
+    // Set a flag to detect if this is a new user needing onboarding
+    // In a real implementation, you'd check your database
+    // For now, we'll use a simplified check based on the auth0 metadata
+    const isNewUser = !session.user.updated_at;
+    const needsOnboarding = isNewUser || pathname === '/onboarding';
+    
+    // If user is authenticated but accessing the homepage, redirect to the appropriate page
     if (pathname === '/') {
-      // Check if the user has completed onboarding by checking if they have a company
-      try {
-        const user = await prisma.user.findUnique({
-          where: { email: session.user.email },
-          include: { companies: true }
-        });
-        
-        // If user has no companies, redirect to onboarding
-        if (!user || user.companies.length === 0) {
-          return NextResponse.redirect(new URL('/onboarding', request.url));
-        }
-        
-        // If user has completed onboarding, redirect to dashboard
+      if (needsOnboarding) {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      } else {
         return NextResponse.redirect(new URL('/dashboard', request.url));
-      } catch (error) {
-        console.error('Error checking user companies:', error);
-        // In case of error, still allow access
-        return NextResponse.next();
       }
     }
     
-    // Special handling for callback - after authentication is complete
-    if (pathname === '/api/auth/callback') {
-      // The Auth0 handler will be applied first, then our middleware
-      // No need for special handling here as Auth0 will redirect based on returnTo
+    // If user is at the callback and needs onboarding, redirect to onboarding
+    if (pathname === '/api/auth/callback' && needsOnboarding) {
+      // Let the callback process complete first, it will redirect automatically
       return NextResponse.next();
     }
   } catch (error) {

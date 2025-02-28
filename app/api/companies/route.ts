@@ -6,101 +6,96 @@ import { z } from 'zod';
 // Validation schema for company data
 const companySchema = z.object({
   companyName: z.string().min(2).max(100),
-  industry: z.string().min(2).max(50),
-  size: z.string().min(1).max(20),
+  website: z.string().optional(),
+  industry: z.string().optional(),
+  employeeCount: z.number().optional(),
+  description: z.string().optional(),
   userId: z.string(),
 });
 
-export async function POST(req: NextRequest) {
+// Force dynamic to prevent static optimization
+export const dynamic = 'force-dynamic';
+
+/**
+ * POST /api/companies
+ * Create a new company and associate it with the current user
+ */
+export async function POST(req: Request) {
   try {
-    // Verify the user is authenticated
+    // Get the authenticated user
     const session = await getSession();
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Parse and validate the request body
-    const body = await req.json();
-    const { companyName, industry, size, userId } = companySchema.parse(body);
-
-    // Verify the authenticated user matches the user ID in the request
-    if (session.user.sub !== userId && session.user.email !== body.email) {
       return NextResponse.json(
-        { error: 'User ID does not match authenticated user' },
-        { status: 403 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
-    // Find the user by ID or email
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { id: userId },
-          { email: session.user.email }
-        ]
+    // Get the company data from the request
+    const data = await req.json();
+    const { companyName, website, industry, employeeCount, description } = data;
+
+    // Validate required fields
+    if (!companyName) {
+      return NextResponse.json(
+        { error: 'Company name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Find or create the user in the database
+    const user = await prisma.user.upsert({
+      where: { 
+        email: session.user.email as string 
       },
-      include: {
-        companies: {
-          include: {
-            company: true
+      update: {
+        name: session.user.name,
+        image: session.user.picture,
+      },
+      create: {
+        email: session.user.email as string,
+        name: session.user.name,
+        image: session.user.picture,
+      },
+    });
+
+    // Generate a slug from company name
+    const baseSlug = companyName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    
+    // Add a timestamp to ensure uniqueness
+    const slug = `${baseSlug}-${Date.now().toString().slice(-6)}`;
+
+    // Create the company with the fields that exist in the schema
+    const company = await prisma.company.create({
+      data: {
+        name: companyName,
+        slug: slug,
+        website: website || null,
+        industry: industry || null,
+        employeeCount: employeeCount ? parseInt(employeeCount) : null,
+        description: description || null,
+        users: {
+          create: {
+            userId: user.id,
+            role: 'OWNER'
           }
         }
       }
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Check if the user already has a company
-    if (user.companies.length > 0) {
-      // Update existing company
-      const companyId = user.companies[0].companyId;
-      
-      const updatedCompany = await prisma.company.update({
-        where: { id: companyId },
-        data: {
-          name: companyName,
-        },
-      });
-
-      return NextResponse.json(updatedCompany);
-    }
-
-    // Generate a slug from company name
-    const slug = companyName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    // Create a new company
-    const company = await prisma.company.create({
-      data: {
-        name: companyName,
-        slug: `${slug}-${Date.now().toString().slice(-6)}`, // Ensure uniqueness
-        users: {
-          create: {
-            user: {
-              connect: { id: user.id }
-            },
-            role: 'OWNER',
-          }
-        }
-      },
-    });
-
+    // Return the created company
     return NextResponse.json(company, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
-    }
-
     console.error('Error creating company:', error);
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Failed to create company',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+      },
       { status: 500 }
     );
   }

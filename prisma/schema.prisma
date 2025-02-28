@@ -21,6 +21,10 @@ model Company {
   id            String    @id @default(cuid())
   name          String
   slug          String    @unique
+  website       String?
+  industry      String?
+  employeeCount Int?
+  description   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   users         CompanyUser[]
